@@ -39,7 +39,7 @@ export default {
       </div>
 
       <!-- Landing Tab Content -->
-      <div v-if="activeTab === 'Landing'" class="py-12">
+      <div v-if="activeTab === 'Landing'">
         <!-- Hero Section -->
         <header class="relative py-20 bg-gradient-to-r from-blue-600 to-teal-500 text-white overflow-hidden">
           <div class="absolute inset-0 bg-black opacity-20 dark:opacity-40"></div> <!-- Subtle overlay -->
@@ -82,7 +82,7 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent1.jpg')"></div>
+              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents1Img + ')' }"></div>
             </div>
           </div>
         </section>
@@ -100,7 +100,7 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent2.jpg')"></div>
+              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents2Img + ')' }"></div>
             </div>
           </div>
         </section>
@@ -118,7 +118,7 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent3.jpg')"></div>
+              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents3Img + ')' }"></div>
             </div>
           </div>
         </section>
@@ -136,7 +136,7 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent4.jpg')"></div>
+              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents4Img + ')' }"></div>
             </div>
           </div>
         </section>
@@ -172,6 +172,12 @@ export default {
     const { gatherLocalHistory } = useHistory();
     const { modelRegistry, fetchServerModels } = useModels();
     const router = VueRouter.useRouter();
+
+
+    const agents1Img = Vue.computed(() => `/assets/aiagent1.jpg`);
+    const agents2Img = Vue.computed(() => `/assets/aiagent2.jpg`);
+    const agents3Img = Vue.computed(() => `/assets/aiagent3.jpg`);
+    const agents4Img = Vue.computed(() => `/assets/aiagent4.jpg`);
 
     const activeTab = Vue.ref('Landing');
     const tabs = ['Landing', 'Agents', 'Chat'];
@@ -271,6 +277,10 @@ export default {
     });
 
     return {
+      agents1Img,
+      agents2Img,
+      agents3Img,
+      agents4Img,
       activeTab,
       tabs,
       features,
