@@ -224,7 +224,7 @@ export default {
         model: agentModel.value,
         systemPrompts: systemPrompts.value,
         userPrompts: userPrompts.value,
-        placeholderImage: Math.floor(Math.random() * 3) + 1,
+        placeholderImage: Math.floor(Math.random() * 10) + 1,
       });
       closeModal();
     }
