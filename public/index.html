@@ -76,6 +76,35 @@
   margin:4px;
 }
 
+
+.hljs {
+      padding: 8px;
+      margin: 4px;
+      max-width: 100%; /* Ensure it doesn't exceed parent width */
+      width: 100%; /* Fill parent container */
+      box-sizing: border-box; /* Include padding/margins in width */
+    }
+
+    /* Force text wrapping in pre tags */
+    pre.hljs {
+      white-space: pre-wrap; /* Wrap text */
+      word-wrap: break-word; /* Legacy support */
+      word-break: break-all; /* Break long words */
+      overflow-x: hidden; /* Prevent horizontal scroll */
+    }
+
+ 
+
+/* Prevent textarea from resizing beyond container */
+.resize-none {
+  resize: none;
+}
+
+/* Ensure sticky works correctly */
+.sticky {
+  position: sticky;
+}
+
 </style>
 
 

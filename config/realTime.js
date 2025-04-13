@@ -1,6 +1,7 @@
-const { Server } = require('socket.io');
-const mongoose = require('mongoose');
+const { Server } = require("socket.io");
+const mongoose = require("mongoose");
 const { handlePrompt } = require("./handleAiInteractions");
+const { isDbConnected } = require("./db.js"); // Import connection status checker
 
 const channels = new Map();
 
@@ -16,7 +17,7 @@ const logSchema = new mongoose.Schema({
   details: { type: mongoose.Schema.Types.Mixed },
 }, { timestamps: true });
 
-const Log = mongoose.model('Log', logSchema, 'logs');
+const Log = mongoose.model("Log", logSchema, "logs");
 
 // Dynamic Entity Schema
 const entitySchema = new mongoose.Schema({
@@ -33,33 +34,13 @@ const entityModels = new Map();
 
 function getEntityModel(entityType) {
   if (!entityModels.has(entityType)) {
-    entityModels.set(entityType, mongoose.model(`${entityType}Set`, entitySchema, `${entityType}Set`));
+    entityModels.set(
+      entityType,
+      mongoose.model(`${entityType}Set`, entitySchema, `${entityType}Set`)
+    );
   }
   return entityModels.get(entityType);
 }
-
-// Check database connection
-let isDbConnected = false;
-mongoose.connection.on('connected', () => { isDbConnected = true; });
-mongoose.connection.on('disconnected', () => { isDbConnected = false; });
-mongoose.connection.on('error', () => { isDbConnected = false; });
-
-// Attempt to connect to database if MONGODB env is set
-async function initializeDatabase() {
-  if (process.env.MONGODB) {
-    try {
-      await mongoose.connect(process.env.MONGODB);
-      console.log('MongoDB Connected');
-    } catch (err) {
-      await logError('error', 'Failed to initialize database', err.stack);
-      isDbConnected = false;
-    }
-  }
-}
-
-initializeDatabase().catch(err => {
-  console.error('Uncaught database initialization error:', err);
-});
 
 /**
  * Generates a muted dark color for user identification.
@@ -68,7 +49,7 @@ function generateMutedDarkColor() {
   const r = Math.floor(Math.random() * 129);
   const g = Math.floor(Math.random() * 129);
   const b = Math.floor(Math.random() * 129);
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
 function validateJoinData(data) {
@@ -80,41 +61,43 @@ function validateLeaveData(data) {
 }
 
 function validateMessage(data) {
-  const isHeartbeat = data && data.type && (data.type === 'ping' || data.type === 'pong');
+  const isHeartbeat = data && data.type && (data.type === "ping" || data.type === "pong");
   if (isHeartbeat) return true;
   return data && data.userUuid && data.channelName && data.type && isValidChannelName(data.channelName);
 }
 
 function isValidChannelName(channelName) {
-  if (!channelName || typeof channelName !== 'string') return false;
+  if (!channelName || typeof channelName !== "string") return false;
   return /^[a-z0-9 _-]+$/i.test(channelName);
 }
 
 function validateLLMData(data) {
-  return data && 
-         typeof data.model === 'object' && 
-         data.model.provider && 
-         data.model.name && 
-         data.model.model &&
-         typeof data.temperature === 'number' && 
-         data.temperature >= 0 && 
-         data.temperature <= 1 &&
-         typeof data.systemPrompt === 'string' && 
-         typeof data.userPrompt === 'string' &&
-         Array.isArray(data.messageHistory) && 
-         typeof data.useJson === 'boolean' &&
-         typeof data.entityType === 'string';
+  return (
+    data &&
+    typeof data.model === "object" &&
+    data.model.provider &&
+    data.model.name &&
+    data.model.model &&
+    typeof data.temperature === "number" &&
+    data.temperature >= 0 &&
+    data.temperature <= 1 &&
+    typeof data.systemPrompt === "string" &&
+    typeof data.userPrompt === "string" &&
+    Array.isArray(data.messageHistory) &&
+    typeof data.useJson === "boolean" &&
+    typeof data.entityType === "string"
+  );
 }
 
 async function loadStateFromServer(channelName, entityType) {
-  if (!isDbConnected) return [];
+  if (!isDbConnected()) return [];
   try {
     const model = getEntityModel(entityType);
     const state = await model
       .find({ channel: channelName })
       .sort({ serverTimestamp: 1 })
       .lean();
-    return state.map(doc => ({
+    return state.map((doc) => ({
       id: doc.id,
       userUuid: doc.userUuid,
       data: doc.data,
@@ -122,7 +105,11 @@ async function loadStateFromServer(channelName, entityType) {
       serverTimestamp: doc.serverTimestamp,
     }));
   } catch (error) {
-    await logError('error', `Error loading ${entityType} for ${channelName}`, error.stack);
+    await logError(
+      "error",
+      `Error loading ${entityType} for ${channelName}`,
+      error.stack
+    );
     return [];
   }
 }
@@ -134,7 +121,7 @@ function broadcastToChannel(channelName, type, payload, excludeUuid = null) {
       const serverTimestamp = Date.now();
       let message;
 
-      if (type === 'user-list') {
+      if (type === "user-list") {
         const usersArray = Object.entries(channel.users).map(([userUuid, user]) => ({
           userUuid,
           displayName: user.displayName,
@@ -142,7 +129,7 @@ function broadcastToChannel(channelName, type, payload, excludeUuid = null) {
           joinedAt: user.joinedAt,
         }));
         message = { type, users: usersArray, timestamp: serverTimestamp };
-      } else if (type === 'user-joined') {
+      } else if (type === "user-joined") {
         message = {
           type,
           userUuid: payload.userUuid,
@@ -151,7 +138,7 @@ function broadcastToChannel(channelName, type, payload, excludeUuid = null) {
           joinedAt: serverTimestamp,
           timestamp: serverTimestamp,
         };
-      } else if (type === 'user-left') {
+      } else if (type === "user-left") {
         message = { type, userUuid: payload.userUuid, timestamp: serverTimestamp };
       } else {
         message = {
@@ -168,12 +155,12 @@ function broadcastToChannel(channelName, type, payload, excludeUuid = null) {
       console.log(`Server broadcasting to channel ${channelName}: ${type}`, message);
       for (const userUuid in channel.sockets) {
         if (userUuid !== excludeUuid && channel.sockets[userUuid]) {
-          channel.sockets[userUuid].emit('message', message);
+          channel.sockets[userUuid].emit("message", message);
         }
       }
     }
   } catch (err) {
-    logError('error', `Broadcast error for ${channelName}`, err.stack);
+    logError("error", `Broadcast error for ${channelName}`, err.stack);
   }
 }
 
@@ -191,13 +178,20 @@ function cleanupUser(channelName, userUuid, socket) {
         if (Object.keys(channel.users).length === 0) {
           channels.delete(channelName);
         } else {
-          broadcastToChannel(channelName, 'user-left', { userUuid });
-          broadcastToChannel(channelName, 'user-list', { id: null, userUuid, data: null });
+          broadcastToChannel(channelName, "user-left", { userUuid });
+          broadcastToChannel(channelName, "user-list", { id: null, userUuid, data: null });
         }
       }
     }
   } catch (err) {
-    logError('error', `Cleanup error for ${channelName} and ${userUuid}`, err.stack, userUuid, channelName, socket.id);
+    logError(
+      "error",
+      `Cleanup error for ${channelName} and ${userUuid}`,
+      err.stack,
+      userUuid,
+      channelName,
+      socket.id
+    );
   }
 }
 
@@ -205,11 +199,11 @@ function validateEntity(payload, entityType, operation) {
   if (!payload.id) {
     return { valid: false, message: `Invalid ${entityType} data for ${operation}: missing id` };
   }
-  return { valid: true, message: '' };
+  return { valid: true, message: "" };
 }
 
 async function upsertChannel(channelName, userUuid, displayName) {
-  if (!isDbConnected) {
+  if (!isDbConnected()) {
     return {
       id: channelName,
       channel: channelName,
@@ -224,17 +218,17 @@ async function upsertChannel(channelName, userUuid, displayName) {
     const timestamp = Date.now();
     const userEntry = { userUuid, displayName, joinedAt: timestamp };
 
-    const model = getEntityModel('channel');
+    const model = getEntityModel("channel");
     const existingChannel = await model.findOne({ id: channelName });
 
     if (existingChannel) {
       const users = existingChannel.data.users || [];
-      const userExists = users.some(user => user.userUuid === userUuid);
+      const userExists = users.some((user) => user.userUuid === userUuid);
 
       if (!userExists) {
         users.push(userEntry);
       } else {
-        const userIndex = users.findIndex(user => user.userUuid === userUuid);
+        const userIndex = users.findIndex((user) => user.userUuid === userUuid);
         users[userIndex] = userEntry;
       }
 
@@ -242,7 +236,7 @@ async function upsertChannel(channelName, userUuid, displayName) {
         { id: channelName },
         {
           $set: {
-            'data.users': users,
+            "data.users": users,
             userUuid,
             timestamp,
             serverTimestamp: timestamp,
@@ -250,7 +244,14 @@ async function upsertChannel(channelName, userUuid, displayName) {
         }
       );
 
-      return { id: channelName, channel: channelName, userUuid, data: { locked: existingChannel.data.locked, users }, timestamp, serverTimestamp: timestamp };
+      return {
+        id: channelName,
+        channel: channelName,
+        userUuid,
+        data: { locked: existingChannel.data.locked, users },
+        timestamp,
+        serverTimestamp: timestamp,
+      };
     } else {
       const channelData = {
         id: channelName,
@@ -268,36 +269,42 @@ async function upsertChannel(channelName, userUuid, displayName) {
       return channelData;
     }
   } catch (err) {
-    await logError('error', `Failed to upsert channel ${channelName}`, err.stack, userUuid, channelName);
+    await logError(
+      "error",
+      `Failed to upsert channel ${channelName}`,
+      err.stack,
+      userUuid,
+      channelName
+    );
     throw err;
   }
 }
 
 async function handleEntityOperation(channelName, userUuid, type, payload, socket) {
   try {
-    const [operation, entityType] = type.split('-');
-    if (!['add', 'update', 'remove'].includes(operation)) {
-      socket.emit('message', { type: 'error', message: `Invalid operation: ${operation}`, timestamp: Date.now() });
+    const [operation, entityType] = type.split("-");
+    if (!["add", "update", "remove"].includes(operation)) {
+      socket.emit("message", { type: "error", message: `Invalid operation: ${operation}`, timestamp: Date.now() });
       return;
     }
 
     const validation = validateEntity(payload, entityType, operation);
     if (!validation.valid) {
-      socket.emit('message', { type: 'error', message: validation.message, timestamp: Date.now() });
+      socket.emit("message", { type: "error", message: validation.message, timestamp: Date.now() });
       return;
     }
 
     if (!channels.has(channelName)) {
-      socket.emit('message', { type: 'error', message: 'Invalid channel', timestamp: Date.now() });
+      socket.emit("message", { type: "error", message: "Invalid channel", timestamp: Date.now() });
       return;
     }
 
     const timestamp = payload.timestamp || Date.now();
     const normalizedPayload = { ...payload, userUuid, timestamp, channelName };
 
-    if (isDbConnected) {
+    if (isDbConnected()) {
       const model = getEntityModel(entityType);
-      if (operation === 'add') {
+      if (operation === "add") {
         await model.create({
           id: payload.id,
           channel: channelName,
@@ -306,29 +313,37 @@ async function handleEntityOperation(channelName, userUuid, type, payload, socke
           timestamp,
           serverTimestamp: Date.now(),
         });
-      } else if (operation === 'update') {
+      } else if (operation === "update") {
         await model.updateOne(
           { id: payload.id, channel: channelName },
           { $set: { data: payload.data, timestamp, serverTimestamp: Date.now() } }
         );
-      } else if (operation === 'remove') {
+      } else if (operation === "remove") {
         await model.deleteOne({ id: payload.id, channel: channelName });
       }
     }
 
     broadcastToChannel(channelName, type, normalizedPayload, userUuid);
   } catch (err) {
-    await logError('error', `Entity operation failed for ${channelName} and type ${type}`, err.stack, userUuid, channelName, socket.id, { payload });
-    socket.emit('message', { type: 'error', message: 'Server error occurred', timestamp: Date.now() });
+    await logError(
+      "error",
+      `Entity operation failed for ${channelName} and type ${type}`,
+      err.stack,
+      userUuid,
+      channelName,
+      socket.id,
+      { payload }
+    );
+    socket.emit("message", { type: "error", message: "Server error occurred", timestamp: Date.now() });
   }
 }
 
 async function handleLLMOperation(channelName, userUuid, type, payload, socket) {
   try {
-    if (type === 'llm-trigger') {
+    if (type === "llm-trigger") {
       console.log(`Server received llm-trigger for channel ${channelName}, user ${userUuid}:`, payload);
       if (!validateLLMData(payload.data)) {
-        socket.emit('message', { type: 'error', message: 'Invalid LLM data', timestamp: Date.now() });
+        socket.emit("message", { type: "error", message: "Invalid LLM data", timestamp: Date.now() });
         return;
       }
 
@@ -347,19 +362,19 @@ async function handleLLMOperation(channelName, userUuid, type, payload, socket) 
 
       // Track processed chunks to avoid duplicates
       const processedChunks = new Set();
-      let aggregatedMessage = '';
+      let aggregatedMessage = "";
 
       await handlePrompt(promptConfig, async (uuid, session, eventType, message) => {
         try {
           const eventId = `${uuid}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          
-          if (eventType === 'message') {
+
+          if (eventType === "message") {
             if (!processedChunks.has(message)) {
               processedChunks.add(message);
               aggregatedMessage += message;
               console.log(`Server received LLM message for uuid ${uuid}:`, message);
               console.log(`Aggregated message so far:`, aggregatedMessage);
-              broadcastToChannel(channelName, 'llm-draft', {
+              broadcastToChannel(channelName, "llm-draft", {
                 id: uuid,
                 userUuid,
                 data: { content: message, entityType },
@@ -369,39 +384,54 @@ async function handleLLMOperation(channelName, userUuid, type, payload, socket) 
             } else {
               console.log(`Server skipped duplicate LLM message for uuid ${uuid}:`, message);
             }
-          } else if (eventType === 'EOM') {
+          } else if (eventType === "EOM") {
             console.log(`Server received LLM EOM for uuid ${uuid}, final message:`, aggregatedMessage);
-            broadcastToChannel(channelName, 'llm-end', {
+            broadcastToChannel(channelName, "llm-end", {
               id: uuid,
               userUuid,
               data: { end: true, entityType },
               timestamp: Date.now(),
               eventId,
             });
-          } else if (eventType === 'ERROR') {
+          } else if (eventType === "ERROR") {
             console.log(`Server received LLM error for uuid ${uuid}:`, message);
-            socket.emit('message', { type: 'error', message, timestamp: Date.now() });
+            socket.emit("message", { type: "error", message, timestamp: Date.now() });
           }
         } catch (err) {
-          await logError('error', `Error in handlePrompt for ${channelName}`, err.stack, userUuid, channelName, socket.id);
+          await logError(
+            "error",
+            `Error in handlePrompt for ${channelName}`,
+            err.stack,
+            userUuid,
+            channelName,
+            socket.id
+          );
         }
       });
     } else {
-      socket.emit('message', { type: 'error', message: `Invalid LLM operation: ${type}`, timestamp: Date.now() });
+      socket.emit("message", { type: "error", message: `Invalid LLM operation: ${type}`, timestamp: Date.now() });
     }
   } catch (err) {
-    await logError('error', `LLM operation failed for ${channelName} and type ${type}`, err.stack, userUuid, channelName, socket.id, { payload });
-    socket.emit('message', { type: 'error', message: 'Server error occurred', timestamp: Date.now() });
+    await logError(
+      "error",
+      `LLM operation failed for ${channelName} and type ${type}`,
+      err.stack,
+      userUuid,
+      channelName,
+      socket.id,
+      { payload }
+    );
+    socket.emit("message", { type: "error", message: "Server error occurred", timestamp: Date.now() });
   }
 }
 
 async function loadAllEntities(channelName) {
-  if (!isDbConnected) return {};
+  if (!isDbConnected()) return {};
   try {
     const collections = await mongoose.connection.db.listCollections().toArray();
     const entityTypes = collections
-      .filter(col => col.name.endsWith('Set'))
-      .map(col => col.name.replace('Set', ''));
+      .filter((col) => col.name.endsWith("Set"))
+      .map((col) => col.name.replace("Set", ""));
 
     const state = {};
     for (const entityType of entityTypes) {
@@ -409,31 +439,50 @@ async function loadAllEntities(channelName) {
     }
     return state;
   } catch (err) {
-    await logError('error', `Failed to load all entities for ${channelName}`, err.stack);
+    await logError(
+      "error",
+      `Failed to load all entities for ${channelName}`,
+      err.stack
+    );
     return {};
   }
 }
 
 function createRealTimeServers(server, corsOptions) {
   const io = new Server(server, {
-    cors: corsOptions || { origin: '*' },
+    cors: corsOptions || { origin: "*" },
     pingInterval: 5000,
     pingTimeout: 10000,
     maxHttpBufferSize: 1e9,
   });
 
-  io.on('connection', (socket) => {
-    socket.on('error', (error) => {
-      logError('error', `Socket error for ${socket.id}: ${error.message}`, error.stack, null, null, socket.id);
-      if (error.message === 'Max buffer size exceeded') {
-        socket.emit('message', { type: 'error', message: 'Message too large', timestamp: Date.now() });
+  io.on("connection", (socket) => {
+    socket.on("error", (error) => {
+      logError(
+        "error",
+        `Socket error for ${socket.id}: ${error.message}`,
+        error.stack,
+        null,
+        null,
+        socket.id
+      );
+      if (error.message === "Max buffer size exceeded") {
+        socket.emit("message", {
+          type: "error",
+          message: "Message too large",
+          timestamp: Date.now(),
+        });
       }
     });
 
-    socket.on('join-channel', async (data) => {
+    socket.on("join-channel", async (data) => {
       try {
         if (!validateJoinData(data)) {
-          socket.emit('message', { type: 'error', message: 'Invalid channel name or data', timestamp: Date.now() });
+          socket.emit("message", {
+            type: "error",
+            message: "Invalid channel name or data",
+            timestamp: Date.now(),
+          });
           return;
         }
 
@@ -441,7 +490,9 @@ function createRealTimeServers(server, corsOptions) {
         socket.join(channelName);
         socket.userUuid = userUuid;
 
-        let channelDoc = isDbConnected ? await getEntityModel('channel').findOne({ id: channelName }).lean() : null;
+        let channelDoc = isDbConnected()
+          ? await getEntityModel("channel").findOne({ id: channelName }).lean()
+          : null;
         if (!channelDoc) {
           channelDoc = await upsertChannel(channelName, userUuid, displayName);
         }
@@ -464,7 +515,7 @@ function createRealTimeServers(server, corsOptions) {
         const channel = channels.get(channelName);
 
         if (channelDoc.data.users) {
-          channelDoc.data.users.forEach(user => {
+          channelDoc.data.users.forEach((user) => {
             if (!channel.users[user.userUuid]) {
               channel.users[user.userUuid] = {
                 displayName: user.displayName,
@@ -476,44 +527,74 @@ function createRealTimeServers(server, corsOptions) {
         }
 
         const userColor = channel.users[userUuid]?.color || generateMutedDarkColor();
-        channel.users[userUuid] = { displayName, color: userColor, joinedAt: Date.now() };
+        channel.users[userUuid] = {
+          displayName,
+          color: userColor,
+          joinedAt: Date.now(),
+        };
         channel.sockets[userUuid] = socket;
 
         await upsertChannel(channelName, userUuid, displayName);
 
         if (channel.locked) {
-          socket.emit('message', { type: 'error', message: 'Channel is Locked', timestamp: Date.now() });
+          socket.emit("message", {
+            type: "error",
+            message: "Channel is Locked",
+            timestamp: Date.now(),
+          });
           return;
         }
 
         const initStateMessage = {
-          type: 'init-state',
+          type: "init-state",
           id: null,
           userUuid,
           data: freshState,
           timestamp: Date.now(),
           serverTimestamp: Date.now(),
         };
-        socket.emit('message', initStateMessage);
+        socket.emit("message", initStateMessage);
 
-        broadcastToChannel(channelName, 'user-list', { id: null, userUuid, data: null });
-        broadcastToChannel(channelName, 'user-joined', { id: null, userUuid, data: { displayName, color: userColor } });
+        broadcastToChannel(channelName, "user-list", { id: null, userUuid, data: null });
+        broadcastToChannel(channelName, "user-joined", {
+          id: null,
+          userUuid,
+          data: { displayName, color: userColor },
+        });
       } catch (err) {
-        await logError('error', `Join channel error for ${data.channelName}`, err.stack, data.userUuid, data.channelName, socket.id);
-        socket.emit('message', { type: 'error', message: 'Failed to join channel', timestamp: Date.now() });
+        await logError(
+          "error",
+          `Join channel error for ${data.channelName}`,
+          err.stack,
+          data.userUuid,
+          data.channelName,
+          socket.id
+        );
+        socket.emit("message", {
+          type: "error",
+          message: "Failed to join channel",
+          timestamp: Date.now(),
+        });
       }
     });
 
-    socket.on('leave-channel', (data) => {
+    socket.on("leave-channel", (data) => {
       try {
         if (!validateLeaveData(data)) return;
         cleanupUser(data.channelName, data.userUuid, socket);
       } catch (err) {
-        logError('error', `Leave channel error for ${data.channelName}`, err.stack, data.userUuid, data.channelName, socket.id);
+        logError(
+          "error",
+          `Leave channel error for ${data.channelName}`,
+          err.stack,
+          data.userUuid,
+          data.channelName,
+          socket.id
+        );
       }
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       try {
         for (const [channelName, channel] of channels) {
           if (channel.sockets[socket.userUuid]) {
@@ -522,16 +603,35 @@ function createRealTimeServers(server, corsOptions) {
           }
         }
       } catch (err) {
-        logError('error', `Disconnect error for socket ${socket.id}`, err.stack, socket.userUuid, null, socket.id);
+        logError(
+          "error",
+          `Disconnect error for socket ${socket.id}`,
+          err.stack,
+          socket.userUuid,
+          null,
+          socket.id
+        );
       }
     });
 
-    socket.on('message', async (data) => {
+    socket.on("message", async (data) => {
       try {
         await handleMessage(data, socket);
       } catch (err) {
-        await logError('error', `Message handling error for socket ${socket.id}`, err.stack, data?.userUuid, data?.channelName, socket.id, { data });
-        socket.emit('message', { type: 'error', message: 'Server error processing message', timestamp: Date.now() });
+        await logError(
+          "error",
+          `Message handling error for socket ${socket.id}`,
+          err.stack,
+          data?.userUuid,
+          data?.channelName,
+          socket.id,
+          { data }
+        );
+        socket.emit("message", {
+          type: "error",
+          message: "Server error processing message",
+          timestamp: Date.now(),
+        });
       }
     });
   });
@@ -542,15 +642,23 @@ function createRealTimeServers(server, corsOptions) {
 async function handleMessage(dataObj, socket) {
   try {
     if (!validateMessage(dataObj)) {
-      socket.emit('message', { type: 'error', message: 'Invalid channel name or message format', timestamp: Date.now() });
+      socket.emit("message", {
+        type: "error",
+        message: "Invalid channel name or message format",
+        timestamp: Date.now(),
+      });
       return;
     }
 
     const { id, userUuid, data, channelName, type } = dataObj;
 
     if (!channels.has(channelName) || !channels.get(channelName).sockets[userUuid]) {
-      if (type !== 'ping' && type !== 'pong') {
-        socket.emit('message', { type: 'error', message: 'Invalid channel or user', timestamp: Date.now() });
+      if (type !== "ping" && type !== "pong") {
+        socket.emit("message", {
+          type: "error",
+          message: "Invalid channel or user",
+          timestamp: Date.now(),
+        });
         return;
       }
     }
@@ -558,34 +666,70 @@ async function handleMessage(dataObj, socket) {
     const channel = channels.get(channelName);
 
     switch (type) {
-      case 'ping':
-        socket.emit('message', { type: 'pong', id: null, userUuid, data: null, timestamp: Date.now(), serverTimestamp: Date.now() });
+      case "ping":
+        socket.emit("message", {
+          type: "pong",
+          id: null,
+          userUuid,
+          data: null,
+          timestamp: Date.now(),
+          serverTimestamp: Date.now(),
+        });
         break;
-      case 'pong':
+      case "pong":
         break;
-      case 'leave-channel':
+      case "leave-channel":
         break;
-      case 'room-lock-toggle':
+      case "room-lock-toggle":
         channel.locked = data.locked;
-        broadcastToChannel(channelName, type, { id: null, userUuid, data: { locked: data.locked }, timestamp: dataObj.timestamp });
+        broadcastToChannel(channelName, type, {
+          id: null,
+          userUuid,
+          data: { locked: data.locked },
+          timestamp: dataObj.timestamp,
+        });
         channel.state = await loadAllEntities(channelName);
         break;
       default:
-        if (type.startsWith('add-') || type.startsWith('update-') || type.startsWith('remove-')) {
+        if (type.startsWith("add-") || type.startsWith("update-") || type.startsWith("remove-")) {
           await handleEntityOperation(channelName, userUuid, type, { id, userUuid, data }, socket);
-        } else if (type.startsWith('llm-')) {
+        } else if (type.startsWith("llm-")) {
           await handleLLMOperation(channelName, userUuid, type, { id, userUuid, data }, socket);
         } else {
-          socket.emit('message', { type: 'error', message: `Unknown message type: ${type}`, timestamp: Date.now() });
+          socket.emit("message", {
+            type: "error",
+            message: `Unknown message type: ${type}`,
+            timestamp: Date.now(),
+          });
         }
     }
   } catch (err) {
-    await logError('error', `Unhandled message error for socket ${socket.id}`, err.stack, dataObj?.userUuid, dataObj?.channelName, socket.id, { dataObj });
-    socket.emit('message', { type: 'error', message: 'Server error processing message', timestamp: Date.now() });
+    await logError(
+      "error",
+      `Unhandled message error for socket ${socket.id}`,
+      err.stack,
+      dataObj?.userUuid,
+      dataObj?.channelName,
+      socket.id,
+      { dataObj }
+    );
+    socket.emit("message", {
+      type: "error",
+      message: "Server error processing message",
+      timestamp: Date.now(),
+    });
   }
 }
 
-async function logError(level, message, stackTrace, userUuid = null, channelName = null, socketId = null, details = {}) {
+async function logError(
+  level,
+  message,
+  stackTrace,
+  userUuid = null,
+  channelName = null,
+  socketId = null,
+  details = {}
+) {
   try {
     const logEntry = new Log({
       timestamp: Date.now(),
@@ -597,12 +741,14 @@ async function logError(level, message, stackTrace, userUuid = null, channelName
       socketId,
       details,
     });
-    if (isDbConnected) {
+    if (isDbConnected()) {
       await logEntry.save();
     }
-    console.error(`[${level.toUpperCase()}] ${message} - Stack: ${stackTrace || 'N/A'}`);
+    console.error(
+      `[${level.toUpperCase()}] ${message} - Stack: ${stackTrace || "N/A"}`
+    );
   } catch (logErr) {
-    console.error('Failed to log error:', logErr);
+    console.error("Failed to log error:", logErr);
   }
 }
 

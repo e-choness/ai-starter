@@ -17,7 +17,8 @@ const cors = require('cors');
 const app = express();
 
 // Import MongoDB connection
-// const connectDB = require('./db.js');
+const { connectDB } = require("./db.js"); // Destructure connectDB from the export
+
 
 //Handles both WSS and Socket.IO depending on the Client's request
 const { createRealTimeServers } = require("./realTime");
@@ -73,6 +74,12 @@ const apiUrl = process.env.API_URL || 'http://localhost:3000';
 
 // // Usage with Express
 // app.use(cors(corsOptions));
+
+// Initialize MongoDB connection once
+connectDB().catch((err) => {
+  console.error("Failed to initialize MongoDB:", err);
+  process.exit(1); // Exit if the connection fails
+});
 
 //Create HTTP Server
 const server = http.createServer(app);

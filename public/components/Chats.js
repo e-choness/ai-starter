@@ -13,7 +13,7 @@ export default {
     },
   },
   template: `
-    <div class="flex flex-col md:flex-row h-[calc(100vh-8rem)] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="flex flex-col h-[calc(100vh-6rem)] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden md:flex-row">
       <!-- Chat Sessions Sidebar -->
       <div class="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <!-- Header with Pencil and Model Dropdown -->
@@ -33,59 +33,121 @@ export default {
             </option>
           </select>
         </div>
-        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <div
-            v-for="session in entities.chatSessions"
-            :key="session.id"
-            class="p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-all"
-            :class="{ 'bg-blue-50 dark:bg-blue-900': activeSessionId === session.id }"
-            @click="selectSession(session.id)"
-          >
-            <div class="flex-1 truncate">
-              <span v-if="isEditingSession !== session.id" class="text-gray-900 dark:text-white font-medium">
-                {{ session.data.name }}
+
+        <!-- Sessions List (Accordion on Mobile, Full List on Desktop) -->
+        <div class="flex-1 bg-gray-50 dark:bg-gray-900">
+          <!-- Mobile: Accordion -->
+          <div v-if="isMobile" class="flex flex-col h-full">
+            <!-- Accordion Header -->
+            <div
+              class="p-4 flex items-center justify-between cursor-pointer bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700"
+              @click="toggleAccordion"
+            >
+              <span class="text-gray-900 dark:text-white font-medium truncate">
+                {{ currentSessionName || 'Chat Sessions' }}
               </span>
-              <input
-                v-else
-                v-model="session.data.name"
-                type="text"
-                class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium w-full"
-                @blur="updateChatSession(session)"
-                @keypress.enter="updateChatSession(session)"
-                :id="'session-input-' + session.id"
-              />
+              <i :class="accordionIcon" class="text-gray-500 dark:text-gray-400 text-lg"></i>
             </div>
-            <div class="flex gap-2">
-              <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button @click.stop="deleteSession(session.id)" class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-600">
-                <i class="pi pi-trash"></i>
-              </button>
+            <!-- Accordion Content -->
+            <div
+              v-if="isAccordionOpen"
+              class="overflow-y-auto"
+              style="max-height: 12rem;"
+            >
+              <div
+                v-for="session in entities.chatSessions"
+                :key="session.id"
+                class="p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-all"
+                :class="{ 'bg-blue-50 dark:bg-blue-900': activeSessionId === session.id }"
+                @click="selectSession(session.id)"
+              >
+                <div class="flex-1 truncate">
+                  <span v-if="isEditingSession !== session.id" class="text-gray-900 dark:text-white font-medium">
+                    {{ session.data.name }}
+                  </span>
+                  <input
+                    v-else
+                    v-model="session.data.name"
+                    type="text"
+                    class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium w-full"
+                    @blur="updateChatSession(session)"
+                    @keypress.enter="updateChatSession(session)"
+                    :id="'session-input-' + session.id"
+                  />
+                </div>
+                <div class="flex gap-2">
+                  <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button @click.stop="deleteSession(session.id)" class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-600">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div v-if="!entities.chatSessions.length" class="p-4 text-gray-500 dark:text-gray-400 text-center">
+                No chat sessions yet. Create one to start chatting.
+              </div>
             </div>
           </div>
-          <div v-if="!entities.chatSessions.length" class="p-4 text-gray-500 dark:text-gray-400 text-center">
-            No chat sessions yet. Create one to start chatting.
+
+          <!-- Desktop: Full List -->
+          <div v-else class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            <div
+              v-for="session in entities.chatSessions"
+              :key="session.id"
+              class="p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-all"
+              :class="{ 'bg-blue-50 dark:bg-blue-900': activeSessionId === session.id }"
+              @click="selectSession(session.id)"
+            >
+              <div class="flex-1 truncate">
+                <span v-if="isEditingSession !== session.id" class="text-gray-900 dark:text-white font-medium">
+                  {{ session.data.name }}
+                </span>
+                <input
+                  v-else
+                  v-model="session.data.name"
+                  type="text"
+                  class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium w-full"
+                  @blur="updateChatSession(session)"
+                  @keypress.enter="updateChatSession(session)"
+                  :id="'session-input-' + session.id"
+                />
+              </div>
+              <div class="flex gap-2">
+                <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                  <i class="pi pi-pencil"></i>
+                </button>
+                <button @click.stop="deleteSession(session.id)" class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-600">
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div v-if="!entities.chatSessions.length" class="p-4 text-gray-500 dark:text-gray-400 text-center">
+              No chat sessions yet. Create one to start chatting.
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Chat Area -->
-      <div class="flex-1 flex flex-col">
+      <div class="flex-1 flex flex-col relative">
         <!-- Messages -->
-        <div ref="chatContainer" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pt-6 pb-0">
+        <div
+          ref="chatContainer"
+          class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pt-6 pb-4"
+          :style="chatContainerStyle"
+        >
           <div
             v-for="chat in activeChats"
             :key="chat.id"
             class="mb-6 p-4 rounded-lg shadow-sm"
             :class="[
               chat.data.isResponse ? 'bg-gray-100 dark:bg-gray-800 mr-auto' : 'bg-gray-100 dark:bg-gray-700 ml-auto',
-              'max-w-[80%]'
+              isMobile ? 'max-w-full' : 'max-w-[80%]'
             ]"
           >
             <!-- Header (Name, Timestamp, Buttons) -->
             <div class="flex items-center mb-2" :class="chat.data.isResponse ? 'justify-between' : 'justify-between flex-row-reverse'">
-              <!-- Name and Timestamp -->
               <div class="flex items-center gap-2">
                 <img
                   v-if="chat.data.isResponse && getAgent(chat.data.agentId)?.data?.imageUrl"
@@ -99,7 +161,6 @@ export default {
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                   {{ formatTime(chat.timestamp) }}
                 </span>
-                <!-- Buttons -->
                 <button
                   @click.stop="copyMessage(chat.data.text)"
                   class="text-gray-400 hover:text-gray-200 rounded-full p-1"
@@ -134,8 +195,8 @@ export default {
           </div>
         </div>
 
-        <!-- Message Input -->
-        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+        <!-- Message Input (Fixed at Bottom) -->
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full sticky bottom-0 z-10">
           <div class="flex gap-3">
             <textarea
               v-model="draft"
@@ -169,6 +230,58 @@ export default {
     const isEditingSession = Vue.ref(null);
     const chatContainer = Vue.ref(null);
     const isAutoScrollEnabled = Vue.ref(true);
+    const isMobile = Vue.ref(false);
+    const isAccordionOpen = Vue.ref(false);
+
+    // Compute the current session name
+    const currentSessionName = Vue.computed(() => {
+      if (!activeSessionId.value) return null;
+      const session = entities.value.chatSessions.find(s => s.id === activeSessionId.value);
+      return session ? session.data.name : null;
+    });
+
+    // Compute chat container style based on mobile detection
+    const chatContainerStyle = Vue.computed(() => ({
+      maxHeight: isMobile.value ? 'calc(100vh - 21rem)' : 'calc(100vh - 13rem)',
+    }));
+
+    // Compute accordion icon based on open state
+    const accordionIcon = Vue.computed(() =>
+      isAccordionOpen.value ? 'pi pi-chevron-circle-up' : 'pi pi-chevron-circle-down'
+    );
+
+    // Detect mobile devices
+    function detectMobile() {
+      const mobileWidthThreshold = 768; // Tailwind's 'md' breakpoint
+      isMobile.value = window.innerWidth <= mobileWidthThreshold;
+    }
+
+    // Toggle accordion
+    function toggleAccordion() {
+      isAccordionOpen.value = !isAccordionOpen.value;
+    }
+
+    // Initial detection and watch for resize
+    Vue.onMounted(() => {
+      detectMobile();
+      window.addEventListener('resize', detectMobile);
+      if (entities.value.agents.length > 0 && !selectedAgentId.value) {
+        selectedAgentId.value = entities.value.agents[0].id;
+      }
+      if (chatContainer.value) {
+        chatContainer.value.addEventListener('scroll', handleScroll);
+      }
+      window.addEventListener('resize', handleResize);
+    });
+
+    Vue.onUnmounted(() => {
+      console.log("Chats.js unmounted");
+      window.removeEventListener('resize', detectMobile);
+      if (chatContainer.value) {
+        chatContainer.value.removeEventListener('scroll', handleScroll);
+      }
+      window.removeEventListener('resize', handleResize);
+    });
 
     const activeChats = Vue.computed(() => {
       if (!activeSessionId.value) return [];
@@ -190,16 +303,6 @@ export default {
       },
       { immediate: true }
     );
-
-    // Automatically select the first agent if available
-    Vue.onMounted(() => {
-      if (entities.value.agents.length > 0 && !selectedAgentId.value) {
-        selectedAgentId.value = entities.value.agents[0].id;
-      }
-      if (chatContainer.value) {
-        chatContainer.value.addEventListener('scroll', handleScroll);
-      }
-    });
 
     // Watch for changes in the agents list and auto-select the first agent
     Vue.watch(
@@ -295,6 +398,14 @@ export default {
       isAutoScrollEnabled.value = isAtBottom;
     }
 
+    function handleResize() {
+      if (chatContainer.value && isAutoScrollEnabled.value) {
+        Vue.nextTick(() => {
+          chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+        });
+      }
+    }
+
     Vue.watch(activeChats, () => {
       if (chatContainer.value && isAutoScrollEnabled.value) {
         Vue.nextTick(() => {
@@ -317,12 +428,18 @@ export default {
         name: `Session ${entities.value.chatSessions.length + 1}`,
       });
       activeSessionId.value = id;
+      if (isMobile.value) {
+        isAccordionOpen.value = false; // Collapse accordion on new session
+      }
     }
 
     function selectSession(id) {
       console.log("selectSession called with id:", id);
       activeSessionId.value = id;
       isEditingSession.value = null;
+      if (isMobile.value) {
+        isAccordionOpen.value = false; // Collapse accordion on selection
+      }
     }
 
     function editSessionName(session) {
@@ -461,13 +578,6 @@ export default {
       });
     }
 
-    Vue.onUnmounted(() => {
-      console.log("Chats.js unmounted");
-      if (chatContainer.value) {
-        chatContainer.value.removeEventListener('scroll', handleScroll);
-      }
-    });
-
     Vue.watch(
       () => entities.value.chatSessions,
       (sessions) => {
@@ -502,6 +612,13 @@ export default {
       chatContainer,
       handleScroll,
       handleEnterKey,
+      handleResize,
+      chatContainerStyle,
+      isMobile,
+      isAccordionOpen,
+      toggleAccordion,
+      accordionIcon,
+      currentSessionName,
     };
   },
 };
