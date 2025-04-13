@@ -27,7 +27,7 @@ export default {
               </div>
             </div>
 
-            <!-- Right Side: Connection Status and Dark Mode Toggle -->
+            <!-- Right Side: Connection Status, Pi-link, and Dark Mode Toggle -->
             <div class="flex items-center space-x-4">
               <!-- Connection Status Dot -->
               <div
@@ -35,6 +35,16 @@ export default {
                 :class="connectionStatusClass"
                 title="Connection Status"
               ></div>
+
+              <!-- Pi-link Copy URL Button -->
+              <button
+                @click="copyUrlToClipboard"
+                class="text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 p-2 rounded-md"
+                title="Copy URL to Clipboard"
+                aria-label="Copy URL to Clipboard"
+              >
+                <i class="pi pi-link text-xl"></i>
+              </button>
 
               <!-- Dark Mode Toggle -->
               <button
@@ -105,6 +115,16 @@ export default {
       }
     }
 
+    function copyUrlToClipboard() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('URL copied to clipboard!');
+      }).catch((err) => {
+        console.error('Failed to copy URL:', err);
+        alert('Failed to copy URL.');
+      });
+    }
+
     const connectionStatusClass = Vue.computed(() => {
       if (connectionStatus.value === 'connected') return 'bg-green-500';
       if (connectionStatus.value === 'connecting') return 'bg-yellow-500';
@@ -134,6 +154,7 @@ export default {
       darkMode,
       toggleDarkMode,
       connectionStatusClass,
+      copyUrlToClipboard,
     };
   },
 };
