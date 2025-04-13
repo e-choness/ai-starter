@@ -1,10 +1,11 @@
 // components/Chats.js
-import { useGlobal } from '../composables/useGlobal.js';
-import { useHistory } from '../composables/useHistory.js';
-import { useRealTime } from '../composables/useRealTime.js';
+import { useGlobal } from "../composables/useGlobal.js";
+import { useHistory } from "../composables/useHistory.js";
+import { useRealTime } from "../composables/useRealTime.js";
+import { useModels } from "../composables/useModels.js";
 
 export default {
-  name: 'Chats',
+  name: "Chats",
   props: {
     darkMode: {
       type: Boolean,
@@ -29,17 +30,30 @@ export default {
             :key="session.id"
             class="p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-all"
             :class="{ 'bg-blue-50 dark:bg-blue-900': activeSessionId === session.id }"
+            @click="selectSession(session.id)"
           >
-            <input
-              v-model="session.data.name"
-              type="text"
-              class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium"
-              @blur="updateChatSession(session)"
-              @click.stop
-            />
-            <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
-              <i class="pi pi-pencil"></i>
-            </button>
+            <div class="flex-1 truncate">
+              <span v-if="isEditingSession !== session.id" class="text-gray-900 dark:text-white font-medium">
+                {{ session.data.name }}
+              </span>
+              <input
+                v-else
+                v-model="session.data.name"
+                type="text"
+                class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium w-full"
+                @blur="updateChatSession(session)"
+                @keypress.enter="updateChatSession(session)"
+                :id="'session-input-' + session.id"
+              />
+            </div>
+            <div class="flex gap-2">
+              <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                <i class="pi pi-pencil"></i>
+              </button>
+              <button @click.stop="deleteSession(session.id)" class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-600">
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
           </div>
           <div v-if="!entities.chatSessions.length" class="p-4 text-gray-500 dark:text-gray-400 text-center">
             No chat sessions yet. Create one to start chatting.
@@ -89,6 +103,7 @@ export default {
           </div>
         </div>
 
+<xsl:output method="xml" indent="yes"/>
         <!-- Message Input -->
         <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div class="flex gap-3">
@@ -112,105 +127,172 @@ export default {
     </div>
   `,
   setup() {
-    console.log('Chats.js setup called');
+    console.log("Chats.js setup called");
     const { entities } = useGlobal();
-    const { addEntity, updateEntity } = useHistory();
+    const { addEntity, updateEntity, removeEntity } = useHistory();
     const { triggerLLM, userUuid } = useRealTime();
+    const { allModels } = useModels();
     const activeSessionId = Vue.ref(null);
-    const selectedAgentId = Vue.ref('');
-    const draft = Vue.ref('');
+    const selectedAgentId = Vue.ref("");
+    const draft = Vue.ref("");
     const isSending = Vue.ref(false);
+    const isEditingSession = Vue.ref(null);
 
     const activeChats = Vue.computed(() => {
       if (!activeSessionId.value) return [];
-      return entities.value.chats.filter(chat => chat.data.chatSession === activeSessionId.value)
+      return entities.value.chats
+        .filter((chat) => chat.data.chatSession === activeSessionId.value)
         .sort((a, b) => a.timestamp - b.timestamp);
     });
 
     function addChatSession() {
-      console.log('addChatSession called');
-      const id = addEntity('chatSessions', { name: `Session ${entities.value.chatSessions.length + 1}` });
+      console.log("addChatSession called");
+      const id = addEntity("chatSessions", {
+        name: `Session ${entities.value.chatSessions.length + 1}`,
+      });
       activeSessionId.value = id;
     }
 
-    function updateChatSession(session) {
-      console.log('updateChatSession called for session:', session.id);
-      updateEntity('chatSessions', session.id, { name: session.data.name });
+    function selectSession(id) {
+      console.log("selectSession called with id:", id);
+      activeSessionId.value = id;
+      isEditingSession.value = null;
     }
 
     function editSessionName(session) {
-      // Focus handled by input click
+      console.log("editSessionName called for session:", session.id);
+      isEditingSession.value = session.id;
+      Vue.nextTick(() => {
+        const input = document.querySelector(`#session-input-${session.id}`);
+        if (input) input.focus();
+      });
+    }
+
+    function updateChatSession(session) {
+      console.log("updateChatSession called for session:", session.id);
+      updateEntity("chatSessions", session.id, { name: session.data.name });
+      isEditingSession.value = null;
+    }
+
+    function deleteSession(id) {
+      console.log("deleteSession called with id:", id);
+      removeEntity("chatSessions", id);
+      if (activeSessionId.value === id) {
+        activeSessionId.value = entities.value.chatSessions[0]?.id || null;
+      }
     }
 
     function sendMessage() {
-      if (!draft.value.trim() || !selectedAgentId.value || isSending.value) return;
-      console.log('sendMessage triggered with draft:', draft.value, 'selectedAgentId:', selectedAgentId.value);
+      if (!draft.value.trim() || !selectedAgentId.value || isSending.value)
+        return;
+      console.log(
+        "sendMessage triggered with draft:",
+        draft.value,
+        "selectedAgentId:",
+        selectedAgentId.value
+      );
 
       isSending.value = true;
       const sessionId = activeSessionId.value;
       if (!sessionId) {
+        console.log("No sessionId, aborting sendMessage");
         isSending.value = false;
         return;
       }
 
       // Add user message
-      console.log('Adding user message for sessionId:', sessionId);
-      const userChatId = addEntity('chats', {
+      console.log("Adding user message for sessionId:", sessionId);
+      const userChatId = addEntity("chats", {
         chatSession: sessionId,
         text: draft.value,
         isResponse: false,
       });
 
       // Add response placeholder
-      console.log('Adding response placeholder for sessionId:', sessionId);
-      const responseChatId = addEntity('chats', {
+      console.log("Adding response placeholder for sessionId:", sessionId);
+      const responseChatId = addEntity("chats", {
         chatSession: sessionId,
-        text: '',
+        text: "",
         isResponse: true,
         agentId: selectedAgentId.value,
         isStreaming: true,
       });
 
-      // Trigger LLM
-      const agent = entities.value.agents.find(a => a.id === selectedAgentId.value);
+      // Trigger LLM with agent's model
+      const agent = entities.value.agents.find(
+        (a) => a.id === selectedAgentId.value
+      );
       if (agent) {
-        console.log('Triggering LLM for responseChatId:', responseChatId);
-        triggerLLM(
-          'chats',
-          responseChatId,
-          { provider: 'openai', name: 'gpt-4', model: 'gpt-4' },
-          0.7,
-          agent.data.systemPrompt || 'You are a helpful assistant.',
-          draft.value,
-          [],
-          false
+        console.log("Triggering LLM for responseChatId:", responseChatId);
+        const selectedModel = allModels.value.find(
+          (m) => m.model === agent.data.model
+        ) || {
+          provider: "openai",
+          name: "gpt-4o",
+          model: "gpt-4o",
+        };
+        try {
+          triggerLLM(
+            "chats",
+            responseChatId,
+            {
+              provider: selectedModel.provider,
+              name: selectedModel.name.en,
+              model: selectedModel.model,
+            },
+            0.7,
+            agent.data.systemPrompts?.[0]?.content ||
+              "You are a helpful assistant.",
+            draft.value,
+            [],
+            false
+          );
+        } catch (error) {
+          console.error("Error triggering LLM:", error);
+          updateEntity("chats", responseChatId, {
+            text: "Error: Unable to get response",
+            isStreaming: false,
+          });
+        }
+      } else {
+        console.log(
+          "No agent found for selectedAgentId:",
+          selectedAgentId.value
         );
+        updateEntity("chats", responseChatId, {
+          text: "Error: No agent selected",
+          isStreaming: false,
+        });
       }
 
-      draft.value = '';
+      draft.value = "";
       isSending.value = false;
     }
 
     function getAgent(agentId) {
-      return entities.value.agents.find(a => a.id === agentId);
+      return entities.value.agents.find((a) => a.id === agentId);
     }
 
     function formatTime(timestamp) {
-      if (!timestamp) return '';
-      return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (!timestamp) return "";
+      return new Date(timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     }
 
     Vue.onMounted(() => {
-      console.log('Chats.js mounted');
+      console.log("Chats.js mounted");
     });
 
     Vue.onUnmounted(() => {
-      console.log('Chats.js unmounted');
+      console.log("Chats.js unmounted");
     });
 
     Vue.watch(
       () => entities.value.chatSessions,
       (sessions) => {
+        console.log("Chat sessions changed:", sessions);
         if (sessions.length && !activeSessionId.value) {
           activeSessionId.value = sessions[0].id;
         }
@@ -224,10 +306,13 @@ export default {
       selectedAgentId,
       draft,
       isSending,
+      isEditingSession,
       activeChats,
       addChatSession,
-      updateChatSession,
+      selectSession,
       editSessionName,
+      updateChatSession,
+      deleteSession,
       sendMessage,
       getAgent,
       formatTime,

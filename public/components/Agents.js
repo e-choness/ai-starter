@@ -1,6 +1,7 @@
 // components/Agents.js
 import { useGlobal } from '../composables/useGlobal.js';
 import { useHistory } from '../composables/useHistory.js';
+import { useModels } from '../composables/useModels.js';
 
 export default {
   name: 'Agents',
@@ -76,6 +77,18 @@ export default {
               class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
               placeholder="Image URL for avatar... (optional)"
             />
+            <div>
+              <label class="text-gray-700 dark:text-gray-300 mb-2 block font-medium">Select Model</label>
+              <select
+                v-model="agentModel"
+                class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
+              >
+                <option value="">Select a model</option>
+                <option v-for="model in allModels" :key="model.model" :value="model.model">
+                  {{ model.name.en }} ({{ model.provider }})
+                </option>
+              </select>
+            </div>
             <div>
               <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">System Prompts</h3>
               <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -172,9 +185,11 @@ export default {
   setup() {
     const { entities } = useGlobal();
     const { addEntity, updateEntity, removeEntity } = useHistory();
+    const { allModels } = useModels();
     const agentName = Vue.ref('');
     const agentDescription = Vue.ref('');
     const agentImageUrl = Vue.ref('');
+    const agentModel = Vue.ref('');
     const systemPrompts = Vue.ref([]);
     const userPrompts = Vue.ref([]);
     const nameError = Vue.ref('');
@@ -187,16 +202,16 @@ export default {
     const promptIndex = Vue.ref(null);
     const promptContent = Vue.ref('');
 
-    // Add placeholderImage to new agents
     function addAgentWithPlaceholder() {
       if (nameError.value || !agentName.value.trim()) return;
       addEntity('agents', {
         name: agentName.value,
         description: agentDescription.value,
         imageUrl: agentImageUrl.value,
+        model: agentModel.value,
         systemPrompts: systemPrompts.value,
         userPrompts: userPrompts.value,
-        placeholderImage: Math.floor(Math.random() * 3) + 1, // Random number between 1 and 3 for aiagent1.jpg, aiagent2.jpg, aiagent3.jpg
+        placeholderImage: Math.floor(Math.random() * 3) + 1,
       });
       closeModal();
     }
@@ -224,6 +239,7 @@ export default {
         agentName.value = agent.data.name;
         agentDescription.value = agent.data.description;
         agentImageUrl.value = agent.data.imageUrl || '';
+        agentModel.value = agent.data.model || '';
         systemPrompts.value = agent.data.systemPrompts ? [...agent.data.systemPrompts] : [];
         userPrompts.value = agent.data.userPrompts ? [...agent.data.userPrompts] : [];
       } else {
@@ -232,6 +248,7 @@ export default {
         agentName.value = '';
         agentDescription.value = '';
         agentImageUrl.value = '';
+        agentModel.value = '';
         systemPrompts.value = [];
         userPrompts.value = [];
       }
@@ -282,6 +299,7 @@ export default {
         name: agent.data.name,
         description: agent.data.description,
         imageUrl: agent.data.imageUrl,
+        model: agent.data.model,
         systemPrompts: agent.data.systemPrompts,
         userPrompts: agent.data.userPrompts,
         placeholderImage: agent.data.placeholderImage,
@@ -295,6 +313,7 @@ export default {
           name: agentName.value,
           description: agentDescription.value,
           imageUrl: agentImageUrl.value,
+          model: agentModel.value,
           systemPrompts: systemPrompts.value,
           userPrompts: userPrompts.value,
           placeholderImage: editingAgent.value.data.placeholderImage,
@@ -314,6 +333,7 @@ export default {
       agentName,
       agentDescription,
       agentImageUrl,
+      agentModel,
       systemPrompts,
       userPrompts,
       nameError,
@@ -325,6 +345,7 @@ export default {
       promptType,
       promptIndex,
       promptContent,
+      allModels,
       validateName,
       validateEditName,
       openEditModal,

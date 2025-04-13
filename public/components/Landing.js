@@ -1,6 +1,7 @@
 // components/Landing.js
 import { useRealTime } from '../composables/useRealTime.js';
 import { useHistory } from '../composables/useHistory.js';
+import { useModels } from '../composables/useModels.js';
 import { useConfigs } from '../composables/useConfigs.js';
 import Agents from './Agents.js';
 import Chats from './Chats.js';
@@ -43,7 +44,7 @@ export default {
         <header class="relative py-20 bg-gradient-to-r from-blue-600 to-teal-500 text-white overflow-hidden">
           <div class="absolute inset-0 bg-black opacity-20 dark:opacity-40"></div> <!-- Subtle overlay -->
           <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl sm:text-5xl font-extrabold mb-4 font-sans">Build Smarter with TemplateApp</h2>
+            <h2 class="text-4xl sm:text-5xl font-extrabold mb-4 font-sans">Build Smarter with AI Starter App</h2>
             <p class="text-lg sm:text-xl mb-8 text-gray-100 font-light">
               A sleek starting point for real-time collaboration apps with multi-user sync and database persistence.
             </p>
@@ -93,6 +94,7 @@ export default {
     const { env } = useConfigs();
     const { connect, disconnect, userUuid, displayName, channelName, isConnected, on } = useRealTime();
     const { gatherLocalHistory } = useHistory();
+    const { modelRegistry, fetchServerModels } = useModels();
     const router = VueRouter.useRouter();
 
     const activeTab = Vue.ref('Landing');
@@ -155,6 +157,7 @@ export default {
 
     Vue.onMounted(() => {
       console.log('Landing.js mounted');
+      fetchServerModels();
       document.addEventListener('visibilitychange', handleVisibilityChange);
       if (props.channelName && isValidChannelName(props.channelName)) {
         channelName.value = props.channelName;
