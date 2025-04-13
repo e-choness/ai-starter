@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="SuperBinder.live - Collaborative AI Generation">
+  <meta name="description" content="Build documents and artifacts with multiple people and multiple AI agents in real time.">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://SuperBinder.live/">
+  <meta property="og:title" content="SuperBinder.live">
+  <meta property="og:description" content="Build documents and artifacts with multiple people and multiple AI agents in real time.">
+  <meta property="og:image" content="./assets/previewImage.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://SuperBinder.live/">
+  <meta property="twitter:title" content="SuperBinder.live">
+  <meta property="twitter:description" content="Build documents and artifacts with multiple people and multiple AI agents in real time.">
+  <meta property="twitter:image" content="./assets/previewImage.png">
+
+  <title>SuperBinder.live</title>
+
+  <link rel="icon" type="image/png" href="/assets/fav.png" />
+
+  <!-- Vue and Vue Router -->
+  <script src="/plugins/vue.global.prod.js"></script>
+  <script src="/plugins/vue-router.global.js"></script>
+
+  <!-- Other Plugins -->
+  <script src="/plugins/axios.min.js"></script>
+
+  <!-- Primevue Icons -->
+  <link rel="stylesheet" href="/plugins/primeicons.css" />
+
+  <!-- Tailwind CSS -->
+  <script src="/plugins/tailwind.js"></script>
+
+  <!-- UUID -->
+  <script src="/plugins/uuidv4.min.js"></script>
+
+  <!-- JSON5 - For processing complex JSON objects -->
+  <script src="/plugins/json5.min.js"></script>
+  <script src="/plugins/html2canvas.min.js"></script>
+
+  <!-- Socket.io Client -->
+  <script src="/plugins/socket.io.min.js"></script>
+
+  <!-- Markdown and PDF -->
+  <script src="/plugins/markdown-it.min.js"></script>
+  <script src="/plugins/jspdf.umd.min.js"></script>
+  <script src="/plugins/marked.umd.js"></script>
+
+  <!-- DOCX -->
+  <script src="/plugins/docx.umd.min.js"></script>
+
+  <!-- JSZIP -->
+  <script src="/plugins/jszip.min.js"></script>
+
+  <!-- Mammoth -->
+  <script src="/plugins/mammoth.browser.min.js"></script>
+
+  <!-- Excel JS -->
+  <script src="/plugins/exceljs.min.js"></script>
+
+  <!-- pdfjs-dist -->
+  <script type="module" src="/plugins/pdf.min.mjs"></script>
+
+  <!-- Prism.js -->
+  <script type="module" src="/plugins/prism.js"></script>
+  <link rel="stylesheet" href="/plugins/prism.css" />
+
+  
+  <!-- Include Main Script -->
+  <script type="module" src="/main.js"></script>
+
+  <style>
+    /* Reset and Base Styles */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      background-color: #0a0f1e; /* Deep navy background for dark mode */
+      color: #e2e8f0; /* Light gray text for readability */
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Landing Page Specific Styles */
+    html.landing-page,
+    body.landing-page,
+    #app.landing-page {
+      position: relative !important;
+      height: auto !important;
+      overflow: visible !important;
+      overflow-x: hidden !important;
+      overscroll-behavior: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1e293b; /* Slate-800 */
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #4b5563; /* Slate-600 */
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* Slate-500 */
+    }
+
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #4b5563 #1e293b;
+    }
+
+    /* Hide Scrollbar When Not Needed */
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Markdown Styles */
+    .markdown-body {
+      color: #e2e8f0;
+      word-wrap: break-word;
+    }
+
+    .markdown-body pre {
+      background: #1e293b;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    .markdown-body code {
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* PDF Viewer Styles */
+    .pdf-viewer {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .pdf-viewer .pdf-page {
+      width: 100% !important;
+      height: auto !important;
+      margin: 20px 0;
+    }
+
+    .pdf-viewer .pdf-page img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .pdf-page.selected {
+      border: 2px solid #3b82f6;
+    }
+
+    /* Global Utility Classes */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .gradient-border {
+      position: relative;
+      border: none;
+    }
+
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      padding: 1px;
+      background: linear-gradient(45deg, #3b82f6, #10b981);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+
+    mark {
+      background-color: lightblue;
+      color: black;
+    }
+
+    .prose span, .prose mark {
+      display: inline !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    span[class^="highlight-"] {
+      background-color: #ADD8E6; /* Light blue for all matches */
+      color: black;
+      padding: 0.25rem;
+    }
+
+    span.highlight-yellow {
+      background-color: #facc15 !important; /* Yellow for the current match */
+      color: black;
+      padding: 0.25rem;
+    }
+  </style>
+
+  <style>
+    /* Dark Mode Table Styling */
+    .dark-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      background: linear-gradient(135deg, #1e293b, #0f172a); /* Subtle gradient for depth */
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark-table thead tr {
+      background-color: #1e293b; /* Darker header background */
+    }
+
+    .dark-table th {
+      font-weight: 600;
+      color: #e2e8f0;
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 2px solid #2d3748; /* Stronger border for header */
+    }
+
+    .dark-table td {
+      padding: 12px 16px;
+      color: #d1d5db;
+      border-bottom: 1px solid #2d3748; /* Subtle row separation */
+    }
+
+    .dark-table tr:hover {
+      background-color: #2d3748; /* Hover effect for rows */
+      transition: background-color 0.2s ease;
+    }
+
+    .dark-table select,
+    .dark-table button {
+      width: 100%;
+      max-width: 200px; /* Limit select width for better layout */
+      background-color: #2d3748;
+      border: 1px solid #4b5563;
+      color: #e2e8f0;
+      border-radius: 4px;
+      padding: 4px;
+    }
+
+    .dark-table select:focus,
+    .dark-table button:focus {
+      outline: none;
+      border-color: #7c3aed; /* Purple focus ring */
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+    }
+
+    .dark-table .pi-times {
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    /* Ensure modal content doesn't overlap with tables */
+    .dark-table-wrapper {
+      max-height: 300px; /* Adjust based on modal height */
+      overflow-y: auto;
+    }
+
+    /* Optional: Glass effect for tables (if desired) */
+    .dark-table.glass-effect {
+      background: rgba(30, 41, 59, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-dark" id="app"></div>
+  <div id="modal-portal"></div>
+  <!-- Comment out the Cloudflare script for local development to avoid 404 errors -->
+  <!-- In production, Cloudflare will re-inject this script if bot protection is enabled -->
+  <!-- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92144a720ef1afc0',t:'MTc0MjEyODUzMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script> -->
+</body>
+</html>
