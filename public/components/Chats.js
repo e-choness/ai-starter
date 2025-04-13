@@ -99,9 +99,8 @@ export default {
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                   {{ formatTime(chat.timestamp) }}
                 </span>
-   <!-- Buttons -->
-              
-                 <button
+                <!-- Buttons -->
+                <button
                   @click.stop="copyMessage(chat.data.text)"
                   class="text-gray-400 hover:text-gray-200 rounded-full p-1"
                   :class="darkMode ? 'bg-gray-700' : 'bg-gray-200'"
@@ -125,9 +124,7 @@ export default {
                 >
                   <i class="pi pi-times text-sm"></i>
                 </button>
-
               </div>
-           
             </div>
             <!-- Message Content -->
             <div class="markdown-body text-left" :class="darkMode ? 'text-gray-200' : 'text-gray-800'" v-html="renderMarkdown(chat.data.text)"></div>
@@ -145,7 +142,7 @@ export default {
               rows="2"
               class="flex-1 p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all resize-none whitespace-pre-wrap"
               placeholder="Type a message..."
-              @keypress.enter.prevent="sendMessage"
+              @keypress.enter="handleEnterKey"
             ></textarea>
             <button
               @click="sendMessage"
@@ -198,6 +195,9 @@ export default {
     Vue.onMounted(() => {
       if (entities.value.agents.length > 0 && !selectedAgentId.value) {
         selectedAgentId.value = entities.value.agents[0].id;
+      }
+      if (chatContainer.value) {
+        chatContainer.value.addEventListener('scroll', handleScroll);
       }
     });
 
@@ -290,7 +290,8 @@ export default {
     function handleScroll() {
       if (!chatContainer.value) return;
       const container = chatContainer.value;
-      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      const threshold = 50; // Pixels from bottom to consider "docked"
+      const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
       isAutoScrollEnabled.value = isAtBottom;
     }
 
@@ -303,7 +304,7 @@ export default {
     }, { deep: true });
 
     Vue.watch(activeSessionId, (newId) => {
-      if (newId && chatContainer.value) {
+      if (newId && chatContainer.value && isAutoScrollEnabled.value) {
         Vue.nextTick(() => {
           chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
         });
@@ -347,6 +348,14 @@ export default {
       }
     }
 
+    function handleEnterKey(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+      // Shift+Enter adds a new line naturally
+    }
+
     function sendMessage() {
       if (!draft.value.trim() || !selectedAgentId.value || isSending.value)
         return;
@@ -383,7 +392,13 @@ export default {
         isStreaming: true,
       });
 
-      // Trigger LLM with agent's model
+      // Build message history from previous chats in the session
+      const messageHistory = activeChats.value.map(chat => ({
+        role: chat.data.isResponse ? "assistant" : "user",
+        content: chat.data.text || "",
+      }));
+
+      // Trigger LLM with agent's model and message history
       const agent = entities.value.agents.find(
         (a) => a.id === selectedAgentId.value
       );
@@ -409,7 +424,7 @@ export default {
             agent.data.systemPrompts?.[0]?.content ||
               "You are a helpful assistant.",
             draft.value,
-            [],
+            messageHistory, // Pass the message history
             false
           );
         } catch (error) {
@@ -446,12 +461,11 @@ export default {
       });
     }
 
-    Vue.onMounted(() => {
-      console.log("Chats.js mounted");
-    });
-
     Vue.onUnmounted(() => {
       console.log("Chats.js unmounted");
+      if (chatContainer.value) {
+        chatContainer.value.removeEventListener('scroll', handleScroll);
+      }
     });
 
     Vue.watch(
@@ -487,6 +501,7 @@ export default {
       renderMarkdown,
       chatContainer,
       handleScroll,
+      handleEnterKey,
     };
   },
 };
