@@ -181,15 +181,27 @@ export default {
     const features = [
       {
         title: 'Real-Time Collaboration',
-        description: 'Sync instantly with multiple users using Socket.IO for seamless communication.',
+        description: 'Sync instantly with multiple users using Socket.IO for seamless communication. Collaborate in seconds!',
       },
       {
         title: 'Database Persistence',
-        description: 'Store and retrieve data dynamically with MongoDB, supporting any entity type.',
+        description: 'Store and retrieve data dynamically with MongoDB, supporting any entity type. Expand new entity types easily.',
       },
       {
         title: 'Customizable Template',
         description: 'Extend this open-source template to build your own collaborative applications.',
+      },
+      {
+        title: 'Tailwind CSS (Light and Dark)',
+        description: 'Integrated light and dark modes.',
+      },
+      {
+        title: 'Deploy and Run for Free',
+        description: 'Lightweight to deploy to a single Web Service and free-tier Mongo Atlas cluster.',
+      },
+      {
+        title: 'Fully Open Source (MIT)',
+        description: 'Infinite free reuse, refactoring, and modification. Make it your own.',
       },
     ];
 
