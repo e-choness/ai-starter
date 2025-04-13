@@ -28,12 +28,8 @@ app.use((req, res, next) => {
 
 // API routes (ensure these are defined first) - For consistency all endpoints start with /api/ or api/1.x/, api/2.x/ to enable API versioning and backward compatibility 
 app.use("/api/configs", require("./routes/configs")); // Configuration values
-app.use("/api/files", require("./routes/files")); // Add and retrieve files to process.env.DATA
 app.use("/api/healthcheck", require("./routes/healthcheck")); // Healthcheck route
 app.use("/api/models", require("./routes/models")); // Server side defined models
-app.use("/api/library", require("./routes/library")); // Interact with library artifacts
-app.use("/api/transcription", require("./routes/transcription")); // Interact with library artifacts
-app.use("/api/textToSpeech", require("./routes/textToSpeech")); // Interact with library artifacts
 
 // SPA Fallback: Serve `index.html` for any non-API routes
 app.get("*", (req, res) => {

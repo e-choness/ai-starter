@@ -83,9 +83,9 @@ export default {
       </div>
 
       <!-- Other Tab Content -->
-      <main v-else class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <agents v-if="activeTab === 'Agents'" :darkMode="darkMode" />
-        <chats v-if="activeTab === 'Chat'" :darkMode="darkMode" />
+      <main v-else class="max-w-8xl mx-auto px-4   py-2">
+        <agents v-show="activeTab === 'Agents'" :darkMode="darkMode" />
+        <chats v-show="activeTab === 'Chat'" :darkMode="darkMode" />
       </main>
     </div>
   `,

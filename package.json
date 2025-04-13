@@ -1,6 +1,6 @@
 {
   "name": "ai-starter-template",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "A starter template for AI-based Vue/Node applications",
   "main": "index.js",
   "scripts": {

@@ -13,7 +13,7 @@ export default {
     },
   },
   template: `
-    <div class="flex h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="flex h-[800px] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <!-- Chat Sessions Sidebar -->
       <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <div class="p-4 border-b border-gray-200 dark:border-gray-700">

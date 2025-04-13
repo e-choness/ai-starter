@@ -1,4 +1,3 @@
-// realTime.js
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const { handlePrompt } = require("./handleAiInteractions");
@@ -162,7 +161,7 @@ function broadcastToChannel(channelName, type, payload, excludeUuid = null) {
           data: payload.data,
           timestamp: payload.timestamp || serverTimestamp,
           serverTimestamp,
-          eventId: payload.eventId || `${payload.id}-${serverTimestamp}-${Math.random().toString(36).substr(2, 9)}`, // Ensure eventId is always set
+          eventId: payload.eventId || `${payload.id}-${serverTimestamp}-${Math.random().toString(36).substr(2, 9)}`,
         };
       }
 
@@ -352,7 +351,6 @@ async function handleLLMOperation(channelName, userUuid, type, payload, socket) 
 
       await handlePrompt(promptConfig, async (uuid, session, eventType, message) => {
         try {
-          // Generate a unique eventId for each broadcast
           const eventId = `${uuid}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           
           if (eventType === 'message') {
@@ -366,7 +364,7 @@ async function handleLLMOperation(channelName, userUuid, type, payload, socket) 
                 userUuid,
                 data: { content: message, entityType },
                 timestamp: Date.now(),
-                eventId, // Ensure eventId is set
+                eventId,
               });
             } else {
               console.log(`Server skipped duplicate LLM message for uuid ${uuid}:`, message);
@@ -378,7 +376,7 @@ async function handleLLMOperation(channelName, userUuid, type, payload, socket) 
               userUuid,
               data: { end: true, entityType },
               timestamp: Date.now(),
-              eventId, // Ensure eventId is set
+              eventId,
             });
           } else if (eventType === 'ERROR') {
             console.log(`Server received LLM error for uuid ${uuid}:`, message);
