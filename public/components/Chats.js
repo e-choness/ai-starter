@@ -13,7 +13,7 @@ export default {
     },
   },
   template: `
-    <div class="flex flex-col h-[calc(100vh-6rem)] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden md:flex-row">
+    <div class="flex flex-col h-[calc(100vh-8rem)] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden md:flex-row">
       <!-- Chat Sessions Sidebar -->
       <div class="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <!-- Header with Pencil and Model Dropdown -->
@@ -482,7 +482,7 @@ export default {
         "selectedAgentId:",
         selectedAgentId.value
       );
-
+    
       isSending.value = true;
       const sessionId = activeSessionId.value;
       if (!sessionId) {
@@ -490,7 +490,7 @@ export default {
         isSending.value = false;
         return;
       }
-
+    
       // Add user message
       console.log("Adding user message for sessionId:", sessionId);
       const userChatId = addEntity("chats", {
@@ -498,7 +498,7 @@ export default {
         text: draft.value,
         isResponse: false,
       });
-
+    
       // Add response placeholder
       console.log("Adding response placeholder for sessionId:", sessionId);
       const responseChatId = addEntity("chats", {
@@ -508,17 +508,52 @@ export default {
         agentId: selectedAgentId.value,
         isStreaming: true,
       });
-
-      // Build message history from previous chats in the session
-      const messageHistory = activeChats.value.map(chat => ({
-        role: chat.data.isResponse ? "assistant" : "user",
-        content: chat.data.text || "",
-      }));
-
-      // Trigger LLM with agent's model and message history
+    
+      // Build message history starting with system and user prompts
       const agent = entities.value.agents.find(
         (a) => a.id === selectedAgentId.value
       );
+      const messageHistory = [];
+    
+      // Concatenate all system prompts into a single system message
+      if (agent && agent.data.systemPrompts && agent.data.systemPrompts.length > 0) {
+        const systemContent = agent.data.systemPrompts
+          .map(prompt => prompt.content)
+          .filter(content => content) // Filter out any null/undefined content
+          .join("\n\n"); // Join with double newlines for separation
+        if (systemContent) {
+          messageHistory.push({
+            role: "user",
+            content: systemContent,
+          });
+        }
+      }
+    
+      // Append all user prompts sequentially
+      if (agent && agent.data.userPrompts && agent.data.userPrompts.length > 0) {
+        agent.data.userPrompts.forEach(prompt => {
+          if (prompt.content) {
+            messageHistory.push({
+              role: "user",
+              content: prompt.content,
+            });
+          }
+        });
+      }
+    
+      // Append previous chats in the session
+      messageHistory.push(...activeChats.value.map(chat => ({
+        role: chat.data.isResponse ? "assistant" : "user",
+        content: chat.data.text || "",
+      })));
+    
+      // Add the current user message to the history
+      messageHistory.push({
+        role: "user",
+        content: draft.value,
+      });
+    
+      // Trigger LLM with agent's model and message history
       if (agent) {
         console.log("Triggering LLM for responseChatId:", responseChatId);
         const selectedModel = models.value.find(
@@ -528,6 +563,12 @@ export default {
           name: "gpt-4o",
           model: "gpt-4o",
         };
+    
+        // Use the concatenated system prompt for the LLM call (as before)
+        const systemPrompt = agent.data.systemPrompts && agent.data.systemPrompts.length > 0
+          ? agent.data.systemPrompts.map(prompt => prompt.content).filter(content => content).join("\n\n")
+          : "You are a helpful assistant.";
+    
         try {
           triggerLLM(
             "chats",
@@ -538,10 +579,9 @@ export default {
               model: selectedModel.model,
             },
             0.7,
-            agent.data.systemPrompts?.[0]?.content ||
-              "You are a helpful assistant.",
+            systemPrompt,
             draft.value,
-            messageHistory, // Pass the message history
+            messageHistory, // Pass the updated message history
             false
           );
         } catch (error) {
@@ -561,7 +601,7 @@ export default {
           isStreaming: false,
         });
       }
-
+    
       draft.value = "";
       isSending.value = false;
     }

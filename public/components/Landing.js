@@ -70,7 +70,7 @@ export default {
 
         <!-- Detailed Features Sections -->
         <!-- Real-Time Multi-User Collaboration -->
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
+        <section class="min-h-[300px] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
           <div class="flex flex-col md:flex-row items-center gap-8">
             <div class="md:w-1/2">
               <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Real-Time Multi-User Collaboration</h3>
@@ -82,13 +82,13 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents1Img + ')' }"></div>
+              <div class="h-48 sm:h-64 rounded-lg bg-cover bg-center aspect-[4/3] overflow-visible" :style="{ backgroundImage: 'url(' + agents1Img + ')' }"></div>
             </div>
           </div>
         </section>
 
         <!-- Customizable AI Agents -->
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
+        <section class="min-h-[300px] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
           <div class="flex flex-col md:flex-row-reverse items-center gap-8">
             <div class="md:w-1/2">
               <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Customizable AI Agents</h3>
@@ -100,13 +100,13 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents2Img + ')' }"></div>
+              <div class="h-48 sm:h-64 rounded-lg bg-cover bg-center aspect-[4/3] overflow-visible" :style="{ backgroundImage: 'url(' + agents2Img + ')' }"></div>
             </div>
           </div>
         </section>
 
         <!-- Multi-LLM Model Support -->
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
+        <section class="min-h-[300px] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
           <div class="flex flex-col md:flex-row items-center gap-8">
             <div class="md:w-1/2">
               <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Multi-LLM Model Support</h3>
@@ -118,13 +118,13 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents3Img + ')' }"></div>
+              <div class="h-48 sm:h-64 rounded-lg bg-cover bg-center aspect-[4/3] overflow-visible" :style="{ backgroundImage: 'url(' + agents3Img + ')' }"></div>
             </div>
           </div>
         </section>
 
         <!-- Single Node.js Codebase Deployment -->
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
+        <section class="min-h-[300px] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
           <div class="flex flex-col md:flex-row-reverse items-center gap-8">
             <div class="md:w-1/2">
               <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Single Node.js Codebase Deployment</h3>
@@ -136,7 +136,7 @@ export default {
               </p>
             </div>
             <div class="md:w-1/2">
-              <div class="h-64 rounded-lg bg-cover bg-center"  :style="{ backgroundImage: 'url(' + agents4Img + ')' }"></div>
+              <div class="h-48 sm:h-64 rounded-lg bg-cover bg-center aspect-[4/3] overflow-visible" :style="{ backgroundImage: 'url(' + agents4Img + ')' }"></div>
             </div>
           </div>
         </section>
@@ -172,7 +172,6 @@ export default {
     const { gatherLocalHistory } = useHistory();
     const { modelRegistry, fetchServerModels } = useModels();
     const router = VueRouter.useRouter();
-
 
     const agents1Img = Vue.computed(() => `/assets/aiagent1.jpg`);
     const agents2Img = Vue.computed(() => `/assets/aiagent2.jpg`);
