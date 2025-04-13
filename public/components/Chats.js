@@ -242,7 +242,7 @@ export default {
 
     // Compute chat container style based on mobile detection
     const chatContainerStyle = Vue.computed(() => ({
-      maxHeight: isMobile.value ? 'calc(100vh - 21rem)' : 'calc(100vh - 13rem)',
+      maxHeight: isMobile.value ? 'calc(100vh - 22rem)' : 'calc(100vh - 13rem)',
     }));
 
     // Compute accordion icon based on open state
