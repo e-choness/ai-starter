@@ -48,19 +48,95 @@ export default {
             <p class="text-lg sm:text-xl mb-8 text-gray-100 font-light">
               A sleek starting point for real-time collaboration apps with multi-user sync and database persistence.
             </p>
+            <button @click="activeTab = 'Agents'" class="m-2 px-6 py-3 bg-white dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 text-blue-600 hover:bg-gray-100 rounded-lg font-semibold transition-all shadow-md">
+              Build an Agent
+            </button>
             <button @click="activeTab = 'Chat'" class="px-6 py-3 bg-white dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 text-blue-600 hover:bg-gray-100 rounded-lg font-semibold transition-all shadow-md">
               Start Chatting Now
             </button>
           </div>
         </header>
 
-        <!-- Key Features Section -->
+        <!-- Key Features Section (Card-Based) -->
         <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
           <h3 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">Key Features</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div v-for="feature in features" :key="feature.title" class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
               <h4 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{{ feature.title }}</h4>
               <p class="text-gray-600 dark:text-gray-300">{{ feature.description }}</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Detailed Features Sections -->
+        <!-- Real-Time Multi-User Collaboration -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
+          <div class="flex flex-col md:flex-row items-center gap-8">
+            <div class="md:w-1/2">
+              <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Real-Time Multi-User Collaboration</h3>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Connect multiple users seamlessly in shared channels for instant collaboration. The app uses Socket.IO to broadcast messages, user presence, and entity updates in real-time, ensuring everyone stays in sync.
+              </p>
+              <p class="text-gray-600 dark:text-gray-300">
+                Each user joins a channel with a unique ID, and actions like sending messages, joining/leaving, or updating entities are instantly reflected across all clients. The system maintains a user list, assigns distinct colors for visual clarity, and supports dynamic channel management, making it ideal for collaborative environments.
+              </p>
+            </div>
+            <div class="md:w-1/2">
+              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent1.jpg')"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Customizable AI Agents -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
+          <div class="flex flex-col md:flex-row-reverse items-center gap-8">
+            <div class="md:w-1/2">
+              <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Customizable AI Agents</h3>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Create and manage multiple AI agents, each tailored to specific tasks or personalities. Define unique system prompts, select from various LLM models, and customize avatars to differentiate agents.
+              </p>
+              <p class="text-gray-600 dark:text-gray-300">
+                The app supports a dynamic agent registry where users can add, edit, or delete agents via a modern UI. Agents persist in MongoDB, ensuring consistency across sessions, and can be assigned to chat sessions for personalized interactions, enabling versatile use cases from customer support to creative writing.
+              </p>
+            </div>
+            <div class="md:w-1/2">
+              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent2.jpg')"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Multi-LLM Model Support -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
+          <div class="flex flex-col md:flex-row items-center gap-8">
+            <div class="md:w-1/2">
+              <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Multi-LLM Model Support</h3>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Leverage a variety of leading AI models from providers like OpenAI, Anthropic, AzureAI, Mistral, Groq, Gemini, and xAI. The app abstracts provider-specific APIs into a unified interface for seamless integration.
+              </p>
+              <p class="text-gray-600 dark:text-gray-300">
+                Users can select models per agent's needs, with streaming responses for real-time chat interactions. Configuration is flexible via environment variables or credentials, and the system handles message history and temperature settings, ensuring context-aware and customizable AI outputs.
+              </p>
+            </div>
+            <div class="md:w-1/2">
+              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent3.jpg')"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Single Node.js Codebase Deployment -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-white dark:bg-gray-800">
+          <div class="flex flex-col md:flex-row-reverse items-center gap-8">
+            <div class="md:w-1/2">
+              <h3 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Single Node.js Codebase Deployment</h3>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Deploy the entire application with a unified Node.js codebase, streamlining development and scaling. The server integrates Express.js, Socket.IO, and MongoDB connectivity in one package.
+              </p>
+              <p class="text-gray-600 dark:text-gray-300">
+                Environment variables configure API keys, database connections, and ports, making deployment straightforward on platforms like Heroku, AWS, or Docker. The modular design ensures all features—real-time sync, AI interactions, and persistence—run cohesively without requiring multiple services.
+              </p>
+            </div>
+            <div class="md:w-1/2">
+              <div class="h-64 rounded-lg bg-cover bg-center" style="background-image: url('/assets/aiagent4.jpg')"></div>
             </div>
           </div>
         </section>
@@ -83,7 +159,7 @@ export default {
       </div>
 
       <!-- Other Tab Content -->
-      <main v-else class="max-w-8xl mx-auto px-4   py-2">
+      <main v-else class="max-w-8xl mx-auto px-4 py-2">
         <agents v-show="activeTab === 'Agents'" :darkMode="darkMode" />
         <chats v-show="activeTab === 'Chat'" :darkMode="darkMode" />
       </main>

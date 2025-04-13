@@ -51,112 +51,126 @@ export default {
       </div>
 
       <!-- Edit Modal -->
-      <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+      <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-4">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-xl">
           <h2 class="text-xl font-semibold text-blue-500 dark:text-blue-400 mb-6">{{ editingAgent ? 'Edit Agent' : 'Add Agent' }}</h2>
-          <div class="space-y-6">
-            <div>
+          
+          <!-- Responsive Grid: Two columns on desktop, single column on mobile -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Left Column: Agent Info -->
+            <div class="space-y-6">
+              <div>
+                <input
+                  v-model="agentName"
+                  @input="validateName"
+                  type="text"
+                  class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
+                  placeholder="Agent name (letters, numbers, underscores only, no spaces)"
+                  :class="{ 'border-red-500': nameError }"
+                />
+                <span v-if="nameError" class="text-red-500 text-sm mt-1 block">{{ nameError }}</span>
+              </div>
+              <textarea
+                v-model="agentDescription"
+                class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all h-32"
+                placeholder="Description..."
+              ></textarea>
               <input
-                v-model="agentName"
-                @input="validateName"
+                v-model="agentImageUrl"
                 type="text"
                 class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
-                placeholder="Agent name (letters, numbers, underscores only, no spaces)"
-                :class="{ 'border-red-500': nameError }"
+                placeholder="Image URL for avatar... (optional)"
               />
-              <span v-if="nameError" class="text-red-500 text-sm mt-1 block">{{ nameError }}</span>
+              <div>
+                <label class="text-gray-700 dark:text-gray-300 mb-2 block font-medium">Select Model</label>
+                <select
+                  v-model="agentModel"
+                  class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
+                >
+                  <option v-for="model in models" :key="model.model" :value="model.model">
+                    {{ model.name.en }} ({{ model.provider }})
+                  </option>
+                </select>
+              </div>
             </div>
-            <textarea
-              v-model="agentDescription"
-              class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all h-32"
-              placeholder="Description..."
-            ></textarea>
-            <input
-              v-model="agentImageUrl"
-              type="text"
-              class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
-              placeholder="Image URL for avatar... (optional)"
-            />
-            <div>
-              <label class="text-gray-700 dark:text-gray-300 mb-2 block font-medium">Select Model</label>
-              <select
-                v-model="agentModel"
-                class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
-              >
-                <option v-for="model in models" :key="model.model" :value="model.model">
-                  {{ model.name.en }} ({{ model.provider }})
-                </option>
-              </select>
-            </div>
-            <div>
-              <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">System Prompts</h3>
-              <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
-                <thead>
-                  <tr class="bg-gray-100 dark:bg-gray-700">
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(prompt, index) in systemPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td class="py-3 px-4">
-                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
-                        <option value="text">Text</option>
-                      </select>
-                    </td>
-                    <td class="py-3 px-4">
-                      <button @click="openPromptModal('system', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
-                        Edit
-                      </button>
-                    </td>
-                    <td class="py-3 px-4">
-                      <button @click="removePrompt('system', index)" class="text-red-500 hover:text-red-600">
-                        <i class="pi pi-times"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <button @click="addPrompt('system')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
-                Add System Prompt
-              </button>
-            </div>
-            <div>
-              <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">User Prompts</h3>
-              <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
-                <thead>
-                  <tr class="bg-gray-100 dark:bg-gray-700">
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
-                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(prompt, index) in userPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td class="py-3 px-4">
-                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
-                        <option value="text">Text</option>
-                      </select>
-                    </td>
-                    <td class="py-3 px-4">
-                      <button @click="openPromptModal('user', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
-                        Edit
-                      </button>
-                    </td>
-                    <td class="py-3 px-4">
-                      <button @click="removePrompt('user', index)" class="text-red-500 hover:text-red-600">
-                        <i class="pi pi-times"></i>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <button @click="addPrompt('user')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
-                Add User Prompt
-              </button>
+
+            <!-- Right Column: System and User Prompts -->
+            <div class="space-y-6">
+              <!-- System Prompts -->
+              <div>
+                <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">System Prompts</h3>
+                <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-700">
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(prompt, index) in systemPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td class="py-3 px-4">
+                        <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
+                          <option value="text">Text</option>
+                        </select>
+                      </td>
+                      <td class="py-3 px-4">
+                        <button @click="openPromptModal('system', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
+                          Edit
+                        </button>
+                      </td>
+                      <td class="py-3 px-4">
+                        <button @click="removePrompt('system', index)" class="text-red-500 hover:text-red-600">
+                          <i class="pi pi-times"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <button @click="addPrompt('system')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
+                  Add System Prompt
+                </button>
+              </div>
+
+              <!-- User Prompts -->
+              <div>
+                <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">User Prompts</h3>
+                <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <thead>
+                    <tr class="bg-gray-100 dark:bg-gray-700">
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
+                      <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(prompt, index) in userPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td class="py-3 px-4">
+                        <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
+                          <option value="text">Text</option>
+                        </select>
+                      </td>
+                      <td class="py-3 px-4">
+                        <button @click="openPromptModal('user', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
+                          Edit
+                        </button>
+                      </td>
+                      <td class="py-3 px-4">
+                        <button @click="removePrompt('user', index)" class="text-red-500 hover:text-red-600">
+                          <i class="pi pi-times"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <button @click="addPrompt('user')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
+                  Add User Prompt
+                </button>
+              </div>
             </div>
           </div>
+
+          <!-- Buttons -->
           <div class="mt-6 flex gap-3 justify-end">
             <button @click="closeModal" class="py-2 px-4 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg transition-all">Cancel</button>
             <button @click="saveAgent" class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">Save</button>
