@@ -22,7 +22,7 @@ Whatever you decide
 1. **Clone the Repository**
    ```bash
    git clone https://github.com/developmentation/ai-starter-template.git
-   cd superbinder-live
+   cd ai-starter-template
    ```
 
 2. **Install Dependencies**
@@ -79,7 +79,7 @@ Provide users instructions on how to use this
 ---
 
 ## Contributing
-Join the revolution! SuperBinder.live thrives on community input—report bugs, suggest features, or submit code to make it even better.
+Join the revolution! This template thrives on community input—report bugs, suggest features, or submit code to make it even better.
 
 1. **Fork the Repository**
    - Click "Fork" on GitHub to create your copy.

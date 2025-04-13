@@ -77,7 +77,7 @@ const apiUrl = process.env.API_URL || 'http://localhost:3000';
 //Create HTTP Server
 const server = http.createServer(app);
 server.listen( port, '0.0.0.0', () =>
-  console.log(`SuperBinder.live - Node.js service listening at ${apiUrl}`)
+  console.log(`AI Starter Template - Node.js service listening at ${apiUrl}`)
 );
 
 //Establish both websocket and Socket.IO servers
