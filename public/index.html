@@ -62,6 +62,26 @@
   <!-- Markdown and PDF -->
   <script src="/plugins/markdown-it.min.js"></script>
 
+
+<!-- HLJS -->
+<link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/default.min.css" id="hljs-theme">
+<script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+
+<!-- Load additional languages -->
+<script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/languages/go.min.js"></script>
+
+<script>hljs.highlightAll();</script>
+
+<style>
+
+.hljs {
+  padding:8px;
+  margin:4px;
+}
+
+</style>
+
+
   <!-- Include Main Script -->
   <script type="module" src="/main.js"></script>
  

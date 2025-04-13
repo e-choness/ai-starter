@@ -20,7 +20,7 @@ export default {
     },
   },
   template: `
-    <div class="min-h-screen transition-colors duration-300">
+    <div class="transition-colors duration-300">
       <!-- Tabs -->
       <div class="sticky top-0 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

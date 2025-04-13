@@ -83,8 +83,7 @@ export default {
                 v-model="agentModel"
                 class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
               >
-                <option value="">Select a model</option>
-                <option v-for="model in allModels" :key="model.model" :value="model.model">
+                <option v-for="model in models" :key="model.model" :value="model.model">
                   {{ model.name.en }} ({{ model.provider }})
                 </option>
               </select>
@@ -185,11 +184,11 @@ export default {
   setup() {
     const { entities } = useGlobal();
     const { addEntity, updateEntity, removeEntity } = useHistory();
-    const { allModels } = useModels();
+    const { models } = useModels();
     const agentName = Vue.ref('');
     const agentDescription = Vue.ref('');
     const agentImageUrl = Vue.ref('');
-    const agentModel = Vue.ref('');
+    const agentModel = Vue.ref(models.value.length > 0 ? models.value[0].model : ''); // Default to first model
     const systemPrompts = Vue.ref([]);
     const userPrompts = Vue.ref([]);
     const nameError = Vue.ref('');
@@ -239,7 +238,7 @@ export default {
         agentName.value = agent.data.name;
         agentDescription.value = agent.data.description;
         agentImageUrl.value = agent.data.imageUrl || '';
-        agentModel.value = agent.data.model || '';
+        agentModel.value = agent.data.model || (models.value.length > 0 ? models.value[0].model : ''); // Default to first model if none exists
         systemPrompts.value = agent.data.systemPrompts ? [...agent.data.systemPrompts] : [];
         userPrompts.value = agent.data.userPrompts ? [...agent.data.userPrompts] : [];
       } else {
@@ -248,7 +247,7 @@ export default {
         agentName.value = '';
         agentDescription.value = '';
         agentImageUrl.value = '';
-        agentModel.value = '';
+        agentModel.value = models.value.length > 0 ? models.value[0].model : ''; // Default to first model
         systemPrompts.value = [];
         userPrompts.value = [];
       }
@@ -345,7 +344,7 @@ export default {
       promptType,
       promptIndex,
       promptContent,
-      allModels,
+      models,
       validateName,
       validateEditName,
       openEditModal,

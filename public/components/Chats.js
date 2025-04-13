@@ -13,16 +13,25 @@ export default {
     },
   },
   template: `
-    <div class="flex h-[800px] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="flex flex-col md:flex-row h-[calc(100vh-8rem)] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <!-- Chat Sessions Sidebar -->
-      <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div class="w-full md:w-1/4 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <!-- Header with Pencil and Model Dropdown -->
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4 bg-gray-50 dark:bg-gray-900">
           <button
             @click="addChatSession"
-            class="w-full py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm"
+            class="p-2 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm"
           >
-            New Chat Session
+            <i class="pi pi-pencil"></i>
           </button>
+          <select
+            v-model="selectedAgentId"
+            class="flex-1 p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
+          >
+            <option v-for="agent in entities.agents" :key="agent.id" :value="agent.id">
+              {{ agent.data.name }}
+            </option>
+          </select>
         </div>
         <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div
@@ -62,62 +71,86 @@ export default {
       </div>
 
       <!-- Chat Area -->
-      <div class="w-2/3 flex flex-col">
-        <!-- Agent Selector -->
-        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4 bg-gray-50 dark:bg-gray-900">
-          <select
-            v-model="selectedAgentId"
-            class="p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all w-full sm:w-1/2"
-          >
-            <option value="">Select an Agent</option>
-            <option v-for="agent in entities.agents" :key="agent.id" :value="agent.id">
-              {{ agent.data.name }}
-            </option>
-          </select>
-        </div>
-
+      <div class="flex-1 flex flex-col">
         <!-- Messages -->
-        <div class="flex-1 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <div ref="chatContainer" class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-6 pt-6 pb-0">
           <div
             v-for="chat in activeChats"
             :key="chat.id"
             class="mb-6 p-4 rounded-lg shadow-sm"
-            :class="chat.data.isResponse ? 'bg-blue-100 dark:bg-blue-800 ml-12' : 'bg-gray-100 dark:bg-gray-700 mr-12'"
+            :class="[
+              chat.data.isResponse ? 'bg-gray-100 dark:bg-gray-800 mr-auto' : 'bg-gray-100 dark:bg-gray-700 ml-auto',
+              'max-w-[80%]'
+            ]"
           >
-            <div class="flex items-center gap-3 mb-2">
-              <img
-                v-if="chat.data.isResponse && getAgent(chat.data.agentId)?.data?.imageUrl"
-                :src="getAgent(chat.data.agentId).data.imageUrl"
-                class="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
-                alt="Agent Avatar"
-              />
-              <span class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-900'">
-                {{ chat.data.isResponse ? getAgent(chat.data.agentId)?.data?.name || 'Agent' : 'You' }}
-              </span>
+            <!-- Header (Name, Timestamp, Buttons) -->
+            <div class="flex items-center mb-2" :class="chat.data.isResponse ? 'justify-between' : 'justify-between flex-row-reverse'">
+              <!-- Name and Timestamp -->
+              <div class="flex items-center gap-2">
+                <img
+                  v-if="chat.data.isResponse && getAgent(chat.data.agentId)?.data?.imageUrl"
+                  :src="getAgent(chat.data.agentId).data.imageUrl"
+                  class="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
+                  alt="Agent Avatar"
+                />
+                <span class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                  {{ chat.data.isResponse ? getAgent(chat.data.agentId)?.data?.name || 'Agent' : 'You' }}
+                </span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ formatTime(chat.timestamp) }}
+                </span>
+   <!-- Buttons -->
+              
+                 <button
+                  @click.stop="copyMessage(chat.data.text)"
+                  class="text-gray-400 hover:text-gray-200 rounded-full p-1"
+                  :class="darkMode ? 'bg-gray-700' : 'bg-gray-200'"
+                  title="Copy message"
+                >
+                  <i class="pi pi-copy text-sm"></i>
+                </button>
+                <button
+                  @click.stop="redoMessage(chat.data.text)"
+                  class="text-gray-400 hover:text-gray-200 rounded-full p-1"
+                  :class="darkMode ? 'bg-gray-700' : 'bg-gray-200'"
+                  title="Redo message"
+                >
+                  <i class="pi pi-refresh text-sm"></i>
+                </button>
+                <button
+                  @click.stop="deleteMessage(chat.id)"
+                  class="text-red-400 hover:text-red-300 rounded-full p-1"
+                  :class="darkMode ? 'bg-gray-700' : 'bg-gray-200'"
+                  title="Delete message"
+                >
+                  <i class="pi pi-times text-sm"></i>
+                </button>
+
+              </div>
+           
             </div>
-            <p class="text-sm" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">{{ chat.data.text }}</p>
-            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{{ formatTime(chat.timestamp) }}</span>
+            <!-- Message Content -->
+            <div class="markdown-body text-left" :class="darkMode ? 'text-gray-200' : 'text-gray-800'" v-html="renderMarkdown(chat.data.text)"></div>
           </div>
           <div v-if="!activeChats.length" class="text-gray-500 dark:text-gray-400 text-center py-12">
             No messages in this session. Select an agent and start chatting!
           </div>
         </div>
 
-<xsl:output method="xml" indent="yes"/>
         <!-- Message Input -->
         <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
           <div class="flex gap-3">
             <textarea
               v-model="draft"
               rows="2"
-              class="flex-1 p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all resize-none"
+              class="flex-1 p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all resize-none whitespace-pre-wrap"
               placeholder="Type a message..."
               @keypress.enter.prevent="sendMessage"
             ></textarea>
             <button
               @click="sendMessage"
               class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
-              :disabled="!draft.trim() || !selectedAgentId || isSending"
+              :disabled="!draft.trim() || !selectedAgentId || !activeSessionId || isSending"
             >
               Send
             </button>
@@ -126,23 +159,155 @@ export default {
       </div>
     </div>
   `,
-  setup() {
+  setup(props) {
     console.log("Chats.js setup called");
     const { entities } = useGlobal();
     const { addEntity, updateEntity, removeEntity } = useHistory();
     const { triggerLLM, userUuid } = useRealTime();
-    const { allModels } = useModels();
+    const { models } = useModels();
     const activeSessionId = Vue.ref(null);
-    const selectedAgentId = Vue.ref("");
+    const selectedAgentId = Vue.ref(null);
     const draft = Vue.ref("");
     const isSending = Vue.ref(false);
     const isEditingSession = Vue.ref(null);
+    const chatContainer = Vue.ref(null);
+    const isAutoScrollEnabled = Vue.ref(true);
 
     const activeChats = Vue.computed(() => {
       if (!activeSessionId.value) return [];
       return entities.value.chats
         .filter((chat) => chat.data.chatSession === activeSessionId.value)
         .sort((a, b) => a.timestamp - b.timestamp);
+    });
+
+    // Dynamically switch Highlight.js theme based on darkMode
+    Vue.watch(
+      () => props.darkMode,
+      (newDarkMode) => {
+        const hljsLink = document.querySelector('link[rel="stylesheet"][href*="highlightjs"]');
+        if (hljsLink) {
+          hljsLink.href = newDarkMode
+            ? 'https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/dark.min.css'
+            : 'https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/default.min.css';
+        }
+      },
+      { immediate: true }
+    );
+
+    // Automatically select the first agent if available
+    Vue.onMounted(() => {
+      if (entities.value.agents.length > 0 && !selectedAgentId.value) {
+        selectedAgentId.value = entities.value.agents[0].id;
+      }
+    });
+
+    // Watch for changes in the agents list and auto-select the first agent
+    Vue.watch(
+      () => entities.value.agents,
+      (agents) => {
+        if (agents.length > 0 && !selectedAgentId.value) {
+          selectedAgentId.value = agents[0].id;
+        }
+      },
+      { immediate: true }
+    );
+
+    // Method to copy message to clipboard
+    function copyMessage(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => console.log('Message copied to clipboard:', text))
+          .catch(err => {
+            console.error('Clipboard API error:', err);
+            fallbackCopy(text);
+          });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const tempInput = document.createElement('input');
+      document.body.appendChild(tempInput);
+      tempInput.value = text;
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        console.log('Fallback: Message copied to clipboard:', text);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      } finally {
+        document.body.removeChild(tempInput);
+      }
+    }
+
+    // Method to redo a message (put it back in the draft)
+    function redoMessage(text) {
+      if (!text) return;
+      draft.value = text;
+    }
+
+    // Method to delete a message
+    function deleteMessage(id) {
+      removeEntity("chats", id);
+    }
+
+    // Markdown rendering with Highlight.js and code block copy button
+    function renderMarkdown(content) {
+      if (!content) return '';
+      try {
+        let textContent = typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);
+        if (textContent.trim().startsWith('{') || textContent.trim().startsWith('[')) {
+          try {
+            const parsed = JSON.parse(textContent);
+            textContent = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
+          } catch (e) {
+            textContent = '```json\n' + textContent + '\n```';
+          }
+        }
+        const md = markdownit({
+          html: true,
+          breaks: true,
+          linkify: true,
+          typographer: true,
+          highlight: function (str, lang) {
+            const code = lang && hljs.getLanguage(lang)
+              ? hljs.highlight(str, { language: lang, ignoreIllegals: true }).value
+              : md.utils.escapeHtml(str);
+            const codeId = `code-${Math.random().toString(36).substr(2, 9)}`;
+            return `<pre class="hljs relative"><code id="${codeId}">${code}</code><button class="copy-code-btn absolute top-2 right-2 text-gray-400 hover:text-gray-200 p-1" onclick="navigator.clipboard.writeText(document.getElementById('${codeId}').innerText).then(() => console.log('Code copied'))"><i class="pi pi-copy text-sm"></i></button></pre>`;
+          }
+        });
+        return md.render(textContent);
+      } catch (error) {
+        console.error('Error in renderMarkdown:', error);
+        return `<pre class="hljs"><code>${content}</code></pre>`;
+      }
+    }
+
+    // Auto-scroll logic
+    function handleScroll() {
+      if (!chatContainer.value) return;
+      const container = chatContainer.value;
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      isAutoScrollEnabled.value = isAtBottom;
+    }
+
+    Vue.watch(activeChats, () => {
+      if (chatContainer.value && isAutoScrollEnabled.value) {
+        Vue.nextTick(() => {
+          chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+        });
+      }
+    }, { deep: true });
+
+    Vue.watch(activeSessionId, (newId) => {
+      if (newId && chatContainer.value) {
+        Vue.nextTick(() => {
+          chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+        });
+      }
     });
 
     function addChatSession() {
@@ -224,7 +389,7 @@ export default {
       );
       if (agent) {
         console.log("Triggering LLM for responseChatId:", responseChatId);
-        const selectedModel = allModels.value.find(
+        const selectedModel = models.value.find(
           (m) => m.model === agent.data.model
         ) || {
           provider: "openai",
@@ -316,6 +481,12 @@ export default {
       sendMessage,
       getAgent,
       formatTime,
+      copyMessage,
+      redoMessage,
+      deleteMessage,
+      renderMarkdown,
+      chatContainer,
+      handleScroll,
     };
   },
 };
