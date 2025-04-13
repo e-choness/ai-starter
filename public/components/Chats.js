@@ -5,39 +5,44 @@ import { useRealTime } from '../composables/useRealTime.js';
 
 export default {
   name: 'Chats',
+  props: {
+    darkMode: {
+      type: Boolean,
+      default: false,
+    },
+  },
   template: `
-    <div class="flex h-[600px] bg-gray-200 dark:bg-gray-800 rounded-lg overflow-hidden">
+    <div class="flex h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <!-- Chat Sessions Sidebar -->
-      <div class="w-1/3 border-r border-gray-300 dark:border-gray-700 flex flex-col">
-        <div class="p-4 border-b border-gray-300 dark:border-gray-700">
+      <div class="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
           <button
             @click="addChatSession"
-            class="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+            class="w-full py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm"
           >
             New Chat Session
           </button>
         </div>
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div
             v-for="session in entities.chatSessions"
             :key="session.id"
-            class="p-4 flex items-center justify-between hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer"
-            :class="{ 'bg-gray-400 dark:bg-gray-600': activeSessionId === session.id }"
-            @click="activeSessionId = session.id"
+            class="p-4 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-all"
+            :class="{ 'bg-blue-50 dark:bg-blue-900': activeSessionId === session.id }"
           >
             <input
               v-model="session.data.name"
               type="text"
-              class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none"
+              class="bg-transparent text-gray-900 dark:text-white flex-1 outline-none font-medium"
               @blur="updateChatSession(session)"
               @click.stop
             />
-            <button @click.stop="editSessionName(session)" class="text-gray-600 dark:text-gray-400 hover:text-purple-500">
+            <button @click.stop="editSessionName(session)" class="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
               <i class="pi pi-pencil"></i>
             </button>
           </div>
-          <div v-if="!entities.chatSessions.length" class="p-4 text-gray-600 dark:text-gray-400">
-            No chat sessions yet.
+          <div v-if="!entities.chatSessions.length" class="p-4 text-gray-500 dark:text-gray-400 text-center">
+            No chat sessions yet. Create one to start chatting.
           </div>
         </div>
       </div>
@@ -45,10 +50,10 @@ export default {
       <!-- Chat Area -->
       <div class="w-2/3 flex flex-col">
         <!-- Agent Selector -->
-        <div class="p-4 border-b border-gray-300 dark:border-gray-700 flex items-center gap-4">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-4 bg-gray-50 dark:bg-gray-900">
           <select
             v-model="selectedAgentId"
-            class="p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500"
+            class="p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all w-full sm:w-1/2"
           >
             <option value="">Select an Agent</option>
             <option v-for="agent in entities.agents" :key="agent.id" :value="agent.id">
@@ -58,43 +63,45 @@ export default {
         </div>
 
         <!-- Messages -->
-        <div class="flex-1 p-4 overflow-y-auto">
+        <div class="flex-1 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div
             v-for="chat in activeChats"
             :key="chat.id"
-            class="mb-4 p-3 rounded-lg"
-            :class="chat.data.isResponse ? 'bg-purple-100 dark:bg-purple-900 ml-8' : 'bg-gray-100 dark:bg-gray-700 mr-8'"
+            class="mb-6 p-4 rounded-lg shadow-sm"
+            :class="chat.data.isResponse ? 'bg-blue-100 dark:bg-blue-800 ml-12' : 'bg-gray-100 dark:bg-gray-700 mr-12'"
           >
-            <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center gap-3 mb-2">
               <img
                 v-if="chat.data.isResponse && getAgent(chat.data.agentId)?.data?.imageUrl"
                 :src="getAgent(chat.data.agentId).data.imageUrl"
-                class="w-6 h-6 rounded-full"
+                class="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600"
                 alt="Agent Avatar"
               />
-              <span class="font-semibold">{{ chat.data.isResponse ? getAgent(chat.data.agentId)?.data?.name || 'Agent' : 'You' }}</span>
+              <span class="font-semibold" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                {{ chat.data.isResponse ? getAgent(chat.data.agentId)?.data?.name || 'Agent' : 'You' }}
+              </span>
             </div>
-            <p class="text-sm">{{ chat.data.text }}</p>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatTime(chat.timestamp) }}</span>
+            <p class="text-sm" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">{{ chat.data.text }}</p>
+            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{{ formatTime(chat.timestamp) }}</span>
           </div>
-          <div v-if="!activeChats.length" class="text-gray-600 dark:text-gray-400 text-center">
-            No messages in this session.
+          <div v-if="!activeChats.length" class="text-gray-500 dark:text-gray-400 text-center py-12">
+            No messages in this session. Select an agent and start chatting!
           </div>
         </div>
 
         <!-- Message Input -->
-        <div class="p-4 border-t border-gray-300 dark:border-gray-700">
-          <div class="flex gap-2">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div class="flex gap-3">
             <textarea
               v-model="draft"
               rows="2"
-              class="flex-1 p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500"
+              class="flex-1 p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all resize-none"
               placeholder="Type a message..."
               @keypress.enter.prevent="sendMessage"
             ></textarea>
             <button
               @click="sendMessage"
-              class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+              class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
               :disabled="!draft.trim() || !selectedAgentId || isSending"
             >
               Send

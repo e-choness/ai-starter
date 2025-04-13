@@ -13,19 +13,23 @@ export default {
       type: String,
       default: null,
     },
+    darkMode: {
+      type: Boolean,
+      default: false,
+    },
   },
   template: `
-    <div class="min-h-screen transition-colors duration-300" :class="darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'">
+    <div class="min-h-screen transition-colors duration-300">
       <!-- Tabs -->
-      <div class="bg-gray-200 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav class="flex space-x-4">
+      <div class="sticky top-0 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav class="flex space-x-6">
             <button
               v-for="tab in tabs"
               :key="tab"
               @click="activeTab = tab"
-              class="px-4 py-2 text-sm font-medium rounded-t-lg transition-colors"
-              :class="activeTab === tab ? 'bg-purple-500 text-white' : 'bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-gray-300 hover:bg-gray-400 dark:hover:bg-gray-600'"
+              class="py-4 text-sm font-medium transition-colors border-b-2"
+              :class="activeTab === tab ? 'border-blue-500 text-blue-500 dark:border-blue-400 dark:text-blue-400' : 'border-transparent text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400'"
             >
               {{ tab }}
             </button>
@@ -33,47 +37,66 @@ export default {
         </div>
       </div>
 
-      <!-- Hero Section -->
-      <header class="py-20 bg-gradient-to-b from-purple-600 to-indigo-600 dark:from-purple-800 dark:to-indigo-800 text-center">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 class="text-4xl sm:text-5xl font-extrabold mb-6">Welcome to the Template</h2>
-          <p class="text-lg sm:text-xl mb-8 text-gray-200">A powerful starting point for real-time collaboration apps with multi-user sync and database persistence.</p>
-          <button @click="activeTab = 'Chats'" class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-all">
-            Start Chatting
-          </button>
-        </div>
-      </header>
+      <!-- Landing Tab Content -->
+      <div v-if="activeTab === 'Landing'" class="py-12">
+        <!-- Hero Section -->
+        <header class="relative py-20 bg-gradient-to-r from-blue-600 to-teal-500 text-white overflow-hidden">
+          <div class="absolute inset-0 bg-black opacity-20 dark:opacity-40"></div> <!-- Subtle overlay -->
+          <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl sm:text-5xl font-extrabold mb-4 font-sans">Build Smarter with TemplateApp</h2>
+            <p class="text-lg sm:text-xl mb-8 text-gray-100 font-light">
+              A sleek starting point for real-time collaboration apps with multi-user sync and database persistence.
+            </p>
+            <button @click="activeTab = 'Chat'" class="px-6 py-3 bg-white dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 text-blue-600 hover:bg-gray-100 rounded-lg font-semibold transition-all shadow-md">
+              Start Chatting Now
+            </button>
+          </div>
+        </header>
 
-      <!-- Tab Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <agents v-if="activeTab === 'Agents'" />
-        <chats v-if="activeTab === 'Chats'" />
-      </main>
-
-      <!-- Features Section -->
-      <section class="py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 class="text-3xl font-bold mb-8 text-center">Key Features</h3>
+        <!-- Key Features Section -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 bg-gray-50 dark:bg-gray-900">
+          <h3 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">Key Features</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div v-for="feature in features" :key="feature.title" class="p-6 bg-gray-200 dark:bg-gray-800 rounded-lg shadow-md">
-              <h4 class="text-xl font-semibold mb-4">{{ feature.title }}</h4>
+            <div v-for="feature in features" :key="feature.title" class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              <h4 class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">{{ feature.title }}</h4>
               <p class="text-gray-600 dark:text-gray-300">{{ feature.description }}</p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <!-- Call to Action Section -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center bg-gray-50 dark:bg-gray-900">
+          <h3 class="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">Ready to Build?</h3>
+          <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Jump into the Agents tab to create your first AI agent, or start chatting now to explore real-time collaboration.
+          </p>
+          <div class="flex justify-center gap-4">
+            <button @click="activeTab = 'Agents'" class="px-6 py-3 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-all">
+              Create an Agent
+            </button>
+            <button @click="activeTab = 'Chat'" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 text-gray-900 hover:bg-gray-300 rounded-lg font-semibold transition-all">
+              Start Chatting
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Other Tab Content -->
+      <main v-else class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <agents v-if="activeTab === 'Agents'" :darkMode="darkMode" />
+        <chats v-if="activeTab === 'Chat'" :darkMode="darkMode" />
+      </main>
     </div>
   `,
   setup(props) {
     console.log('Landing.js setup called');
     const { env } = useConfigs();
-    const { connect, disconnect, userUuid, displayName, channelName, isConnected, connectionStatus, on } = useRealTime();
+    const { connect, disconnect, userUuid, displayName, channelName, isConnected, on } = useRealTime();
     const { gatherLocalHistory } = useHistory();
     const router = VueRouter.useRouter();
 
-    const darkMode = Vue.ref(false);
-    const activeTab = Vue.ref('Chats');
-    const tabs = ['Agents', 'Chats'];
+    const activeTab = Vue.ref('Landing');
+    const tabs = ['Landing', 'Agents', 'Chat'];
     const sessionReady = Vue.ref(false);
     const errorMessage = Vue.ref('');
 
@@ -91,10 +114,6 @@ export default {
         description: 'Extend this open-source template to build your own collaborative applications.',
       },
     ];
-
-    function toggleDarkMode() {
-      darkMode.value = !darkMode.value;
-    }
 
     function copyLink() {
       const link = `${env.value.API_URL}/${channelName.value}`;
@@ -134,12 +153,6 @@ export default {
       }
     }
 
-    const connectionStatusClass = Vue.computed(() => {
-      if (connectionStatus.value === 'connected') return 'bg-green-500';
-      if (connectionStatus.value === 'connecting') return 'bg-yellow-500';
-      return 'bg-gray-500';
-    });
-
     Vue.onMounted(() => {
       console.log('Landing.js mounted');
       document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -167,15 +180,12 @@ export default {
     });
 
     return {
-      darkMode,
-      toggleDarkMode,
       activeTab,
       tabs,
       features,
       copyLink,
       sessionReady,
       errorMessage,
-      connectionStatusClass,
     };
   },
 };

@@ -4,176 +4,166 @@ import { useHistory } from '../composables/useHistory.js';
 
 export default {
   name: 'Agents',
+  props: {
+    darkMode: {
+      type: Boolean,
+      default: false,
+    },
+  },
   template: `
-    <div class="p-4">
-      <!-- Add Agent Button -->
-      <div class="mb-6">
-        <button @click="openEditModal()" class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
-          Add Agent
+    <div class="p-6">
+      <!-- Header -->
+      <div class="mb-8 flex justify-between items-center">
+        <h2 class="text-2xl font-semibold" :class="darkMode ? 'text-white' : 'text-gray-900'">Manage Agents</h2>
+        <button @click="openEditModal()" class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-md transition-all">
+          Add New Agent
         </button>
       </div>
 
-      <!-- Agents List -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <!-- Agents Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="agent in entities.agents"
           :key="agent.id"
-          class="p-4 bg-gray-200 dark:bg-gray-800 rounded-lg shadow-md flex flex-col justify-between"
+          class="relative h-48 rounded-lg shadow-md overflow-hidden cursor-pointer transition-transform hover:scale-105"
+          :style="{ backgroundImage: \`url(\${agent.data.imageUrl ? agent.data.imageUrl : \`/assets/aiagent\${agent.data.placeholderImage || 1}.jpg\`})\`, backgroundSize: 'cover', backgroundPosition: 'center' }"
         >
-          <div>
-            <input
-              v-model="agent.data.name"
-              type="text"
-              class="w-full p-2 mb-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
-              @input="validateEditName(agent)"
-              @blur="updateAgent(agent)"
-              :class="{ 'border-red-500': editErrors[agent.id] }"
-            />
-            <textarea
-              v-model="agent.data.description"
-              class="w-full p-2 mb-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
-              rows="3"
-              @blur="updateAgent(agent)"
-            ></textarea>
-            <input
-              v-model="agent.data.imageUrl"
-              type="text"
-              class="w-full p-2 mb-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
-              placeholder="Image URL (optional)"
-              @blur="updateAgent(agent)"
-            />
+          <div class="absolute inset-0 bg-gradient-to-t from-gray-900/90 to-transparent"></div>
+          <div class="relative z-10 flex flex-col h-full p-4 justify-between">
+            <div>
+              <h3 class="text-xl font-semibold text-white">{{ agent.data.name }}</h3>
+              <p class="text-gray-300 text-sm mt-1 line-clamp-2">{{ agent.data.description }}</p>
+            </div>
+            <div class="flex justify-end gap-2">
+              <button @click.stop="openEditModal(agent)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
+                Edit
+              </button>
+              <button @click.stop="removeAgent(agent.id)" class="py-1 px-3 bg-red-500 dark:bg-red-400 dark:hover:bg-red-600 hover:bg-red-600 text-white rounded-lg transition-all">
+                Delete
+              </button>
+            </div>
           </div>
-          <button
-            @click="openEditModal(agent)"
-            class="mt-2 py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg self-start"
-          >
-            Edit Prompts
-          </button>
-          <button
-            @click="removeAgent(agent.id)"
-            class="mt-2 py-1 px-2 bg-red-600 hover:bg-red-700 text-white rounded-lg self-end"
-          >
-            Delete
-          </button>
         </div>
-        <div v-if="!entities.agents.length" class="col-span-full text-center text-gray-600 dark:text-gray-400">
-          No agents created yet.
+        <div v-if="!entities.agents.length" class="col-span-full text-center py-12" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+          No agents created yet. Click "Add New Agent" to get started.
         </div>
       </div>
 
       <!-- Edit Modal -->
-      <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-          <h2 class="text-lg font-semibold text-purple-400 mb-4">{{ editingAgent ? 'Edit Agent' : 'Add Agent' }}</h2>
-          <div class="space-y-4">
-            <input
-              v-model="agentName"
-              @input="validateName"
-              type="text"
-              class="w-full p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
-              placeholder="Agent name (letters, numbers, underscores only, no spaces)"
-              :class="{ 'border-red-500': nameError }"
-            />
-            <span v-if="nameError" class="text-red-500 text-sm">{{ nameError }}</span>
+      <div v-if="isModalOpen" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
+          <h2 class="text-xl font-semibold text-blue-500 dark:text-blue-400 mb-6">{{ editingAgent ? 'Edit Agent' : 'Add Agent' }}</h2>
+          <div class="space-y-6">
+            <div>
+              <input
+                v-model="agentName"
+                @input="validateName"
+                type="text"
+                class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
+                placeholder="Agent name (letters, numbers, underscores only, no spaces)"
+                :class="{ 'border-red-500': nameError }"
+              />
+              <span v-if="nameError" class="text-red-500 text-sm mt-1 block">{{ nameError }}</span>
+            </div>
             <textarea
               v-model="agentDescription"
-              class="w-full p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none h-24"
+              class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all h-32"
               placeholder="Description..."
             ></textarea>
             <input
               v-model="agentImageUrl"
               type="text"
-              class="w-full p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none"
+              class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all"
               placeholder="Image URL for avatar... (optional)"
             />
             <div>
-              <h3 class="text-gray-600 dark:text-gray-300 mb-2">System Prompts</h3>
-              <table class="w-full text-left">
+              <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">System Prompts</h3>
+              <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
                 <thead>
-                  <tr class="bg-gray-300 dark:bg-gray-900">
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
+                  <tr class="bg-gray-100 dark:bg-gray-700">
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(prompt, index) in systemPrompts" :key="prompt.id" class="border-b border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors">
-                    <td class="py-2 px-4">
-                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full">
+                  <tr v-for="(prompt, index) in systemPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <td class="py-3 px-4">
+                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
                         <option value="text">Text</option>
                       </select>
                     </td>
-                    <td class="py-2 px-4">
-                      <button @click="openPromptModal('system', index, prompt.content)" class="py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    <td class="py-3 px-4">
+                      <button @click="openPromptModal('system', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
                         Edit
                       </button>
                     </td>
-                    <td class="py-2 px-4">
-                      <button @click="removePrompt('system', index)" class="text-red-400 hover:text-red-300">
+                    <td class="py-3 px-4">
+                      <button @click="removePrompt('system', index)" class="text-red-500 hover:text-red-600">
                         <i class="pi pi-times"></i>
                       </button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-              <button @click="addPrompt('system')" class="mt-2 py-1 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
+              <button @click="addPrompt('system')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
                 Add System Prompt
               </button>
             </div>
             <div>
-              <h3 class="text-gray-600 dark:text-gray-300 mb-2">User Prompts</h3>
-              <table class="w-full text-left">
+              <h3 class="text-gray-700 dark:text-gray-300 mb-3 font-medium">User Prompts</h3>
+              <table class="w-full text-left border border-gray-200 dark:border-gray-700 rounded-lg">
                 <thead>
-                  <tr class="bg-gray-300 dark:bg-gray-900">
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
-                    <th class="py-2 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
+                  <tr class="bg-gray-100 dark:bg-gray-700">
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Type</th>
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Content</th>
+                    <th class="py-3 px-4 text-gray-900 dark:text-gray-200 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(prompt, index) in userPrompts" :key="prompt.id" class="border-b border-gray-300 dark:border-gray-700 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors">
-                    <td class="py-2 px-4">
-                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full">
+                  <tr v-for="(prompt, index) in userPrompts" :key="prompt.id" class="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <td class="py-3 px-4">
+                      <select v-model="prompt.type" class="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg p-1 w-full border border-gray-200 dark:border-gray-600">
                         <option value="text">Text</option>
                       </select>
                     </td>
-                    <td class="py-2 px-4">
-                      <button @click="openPromptModal('user', index, prompt.content)" class="py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    <td class="py-3 px-4">
+                      <button @click="openPromptModal('user', index, prompt.content)" class="py-1 px-3 bg-blue-500 dark:bg-blue-400 dark:hover:bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
                         Edit
                       </button>
                     </td>
-                    <td class="py-2 px-4">
-                      <button @click="removePrompt('user', index)" class="text-red-400 hover:text-red-300">
+                    <td class="py-3 px-4">
+                      <button @click="removePrompt('user', index)" class="text-red-500 hover:text-red-600">
                         <i class="pi pi-times"></i>
                       </button>
                     </td>
                   </tr>
                 </tbody>
               </table>
-              <button @click="addPrompt('user')" class="mt-2 py-1 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
+              <button @click="addPrompt('user')" class="mt-3 py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
                 Add User Prompt
               </button>
             </div>
           </div>
-          <div class="mt-4 flex gap-2 justify-end">
-            <button @click="closeModal" class="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg">Cancel</button>
-            <button @click="saveAgent" class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Save</button>
+          <div class="mt-6 flex gap-3 justify-end">
+            <button @click="closeModal" class="py-2 px-4 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg transition-all">Cancel</button>
+            <button @click="saveAgent" class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">Save</button>
           </div>
         </div>
       </div>
 
       <!-- Prompt Editing Modal -->
-      <div v-if="isPromptModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-gray-200 dark:bg-gray-800 p-6 rounded-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
-          <h2 class="text-lg font-semibold text-purple-400 mb-4">Edit Prompt</h2>
+      <div v-if="isPromptModalOpen" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-800 p-8 rounded-lg w-full max-w-xl max-h-[80vh] overflow-y-auto shadow-xl">
+          <h2 class="text-xl font-semibold text-blue-500 dark:text-blue-400 mb-6">Edit Prompt</h2>
           <textarea
             v-model="promptContent"
-            class="w-full p-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:outline-none h-64"
+            class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:outline-none transition-all h-64"
             placeholder="Enter prompt text..."
           ></textarea>
-          <div class="mt-4 flex gap-2 justify-end">
-            <button @click="closePromptModal" class="py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg">Cancel</button>
-            <button @click="savePrompt" class="py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">Save</button>
+          <div class="mt-6 flex gap-3 justify-end">
+            <button @click="closePromptModal" class="py-2 px-4 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg transition-all">Cancel</button>
+            <button @click="savePrompt" class="py-2 px-4 bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">Save</button>
           </div>
         </div>
       </div>
@@ -196,6 +186,20 @@ export default {
     const promptType = Vue.ref('');
     const promptIndex = Vue.ref(null);
     const promptContent = Vue.ref('');
+
+    // Add placeholderImage to new agents
+    function addAgentWithPlaceholder() {
+      if (nameError.value || !agentName.value.trim()) return;
+      addEntity('agents', {
+        name: agentName.value,
+        description: agentDescription.value,
+        imageUrl: agentImageUrl.value,
+        systemPrompts: systemPrompts.value,
+        userPrompts: userPrompts.value,
+        placeholderImage: Math.floor(Math.random() * 3) + 1, // Random number between 1 and 3 for aiagent1.jpg, aiagent2.jpg, aiagent3.jpg
+      });
+      closeModal();
+    }
 
     function validateName() {
       if (!/^[a-zA-Z0-9_]+$/.test(agentName.value)) {
@@ -272,18 +276,6 @@ export default {
       closePromptModal();
     }
 
-    function addAgent() {
-      if (nameError.value || !agentName.value.trim()) return;
-      addEntity('agents', {
-        name: agentName.value,
-        description: agentDescription.value,
-        imageUrl: agentImageUrl.value,
-        systemPrompts: systemPrompts.value,
-        userPrompts: userPrompts.value,
-      });
-      closeModal();
-    }
-
     function updateAgent(agent) {
       if (editErrors.value[agent.id]) return;
       updateEntity('agents', agent.id, {
@@ -292,6 +284,7 @@ export default {
         imageUrl: agent.data.imageUrl,
         systemPrompts: agent.data.systemPrompts,
         userPrompts: agent.data.userPrompts,
+        placeholderImage: agent.data.placeholderImage,
       });
     }
 
@@ -304,9 +297,10 @@ export default {
           imageUrl: agentImageUrl.value,
           systemPrompts: systemPrompts.value,
           userPrompts: userPrompts.value,
+          placeholderImage: editingAgent.value.data.placeholderImage,
         });
       } else {
-        addAgent();
+        addAgentWithPlaceholder();
       }
       closeModal();
     }
@@ -340,7 +334,6 @@ export default {
       openPromptModal,
       closePromptModal,
       savePrompt,
-      addAgent,
       updateAgent,
       saveAgent,
       removeAgent,
